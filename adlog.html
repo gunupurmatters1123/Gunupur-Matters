@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | Gunupur Matters</title>
+    <meta name="description" content="Secure admin login for Gunupur Matters dashboard.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-dark: #07141f;
+            --bg-deep: #0b1f2e;
+            --bg-panel: rgba(15, 31, 46, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.14);
+            --text: #eef8ff;
+            --muted: #a6bfce;
+            --accent: #47d7ff;
+            --accent-2: #68f0b4;
+            --warning: #ffb547;
+            --danger: #ff6d7a;
+            --shadow: 0 30px 80px rgba(3, 12, 21, 0.6);
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: "Inter", sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+        }
+
+        body {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at top left, rgba(71, 215, 255, 0.18), transparent 26%),
+                radial-gradient(circle at bottom right, rgba(104, 240, 180, 0.14), transparent 30%),
+                #07141f;
+        }
+
+        .bg-video-wrap {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .bg-video-wrap video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: saturate(1.1) contrast(1.08) brightness(0.5);
+            transform: scale(1.08);
+        }
+
+        .bg-video-wrap::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(7, 20, 31, 0.78), rgba(7, 20, 31, 0.52));
+            z-index: 1;
+        }
+
+        .pattern {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+            background-size: 38px 38px;
+            mask-image: radial-gradient(circle at center, black 38%, transparent 100%);
+            z-index: 2;
+        }
+
+        .app-shell {
+            position: relative;
+            z-index: 3;
+            width: min(1180px, calc(100% - 32px));
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 28px;
+            align-items: center;
+        }
+
+        .brand-panel {
+            padding: 24px 18px 24px 10px;
+        }
+
+        .brand-mark {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 999px;
+            padding: 10px 16px;
+            backdrop-filter: blur(18px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+        }
+
+        .brand-mark .icon {
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #052434;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .brand-mark span {
+            font-size: 0.9rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .hero-copy {
+            margin-top: 42px;
+            max-width: 620px;
+        }
+
+        .hero-copy h1 {
+            margin: 0;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            line-height: 0.96;
+            letter-spacing: -0.06em;
+            font-weight: 800;
+        }
+
+        .hero-copy h1 .accent {
+            color: var(--accent);
+            text-shadow: 0 0 30px rgba(71, 215, 255, 0.48);
+        }
+
+        .hero-copy p {
+            margin-top: 20px;
+            color: rgba(238, 248, 255, 0.82);
+            font-size: 1.08rem;
+            line-height: 1.8;
+            max-width: 560px;
+        }
+
+        .hero-stats {
+            margin-top: 28px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .stat {
+            min-width: 150px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 16px 18px;
+        }
+
+        .stat strong {
+            display: block;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .stat span {
+            display: block;
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 0.82rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .login-panel {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .login-card {
+            width: min(100%, 440px);
+            background: rgba(7, 19, 28, 0.6);
+            border: 1px solid var(--panel-border);
+            border-radius: 28px;
+            padding: 30px 26px 26px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+        }
+
+        .security-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(104, 240, 180, 0.12);
+            border: 1px solid rgba(104, 240, 180, 0.25);
+            color: var(--accent-2);
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .login-card h2 {
+            margin: 18px 0 8px;
+            font-size: clamp(2rem, 3vw, 2.5rem);
+            letter-spacing: -0.05em;
+        }
+
+        .login-card p {
+            margin: 0 0 22px;
+            color: var(--muted);
+            font-size: 0.96rem;
+            line-height: 1.7;
+        }
+
+        .notice {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+            color: #ffe4d0;
+            background: rgba(255, 109, 122, 0.12);
+            border: 1px solid rgba(255, 109, 122, 0.35);
+            font-size: 0.92rem;
+        }
+
+        .notice.show {
+            display: flex;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .field {
+            position: relative;
+        }
+
+        .field i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,0.4);
+            font-size: 0.95rem;
+            z-index: 2;
+        }
+
+        .field input {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text);
+            border-radius: 14px;
+            height: 54px;
+            padding: 0 18px 0 44px;
+            font-size: 1rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+            outline: none;
+        }
+
+        .field input::placeholder {
+            color: rgba(255,255,255,0.42);
+        }
+
+        .field input:focus {
+            border-color: rgba(71, 215, 255, 0.7);
+            box-shadow: 0 0 0 4px rgba(71, 215, 255, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 26px;
+            height: 26px;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.72);
+            font-size: 0.95rem;
+            cursor: pointer;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+            padding: 0;
+        }
+
+        .toggle-password:hover {
+            color: rgba(255,255,255,1);
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            margin-top: 4px;
+            font-size: 0.86rem;
+            color: var(--muted);
+        }
+
+        .remember {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .remember input {
+            accent-color: var(--accent);
+        }
+
+        .link {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .submit-btn {
+            margin-top: 6px;
+            border: none;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #032232;
+            font-weight: 800;
+            font-size: 1rem;
+            letter-spacing: 0.02em;
+            border-radius: 16px;
+            height: 56px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 18px 35px rgba(71, 215, 255, 0.28);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 24px 40px rgba(71, 215, 255, 0.32);
+        }
+
+        .demo-box {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px dashed rgba(255,255,255,0.12);
+            color: var(--muted);
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+
+        .demo-box strong {
+            color: var(--text);
+        }
+
+        .footer-note {
+            margin-top: 18px;
+            color: rgba(255,255,255,0.58);
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        @media (max-width: 920px) {
+            body {
+                overflow-y: auto;
+            }
+
+            .app-shell {
+                grid-template-columns: 1fr;
+                padding: 40px 0 60px;
+            }
+
+            .brand-panel {
+                padding: 0;
+                text-align: center;
+            }
+
+            .hero-copy {
+                margin: 28px auto 0;
+                text-align: center;
+            }
+
+            .hero-stats {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 540px) {
+            .app-shell {
+                width: min(100% - 18px, 440px);
+            }
+
+            .login-card {
+                padding: 22px 16px 16px;
+                border-radius: 22px;
+            }
+
+            .hero-copy h1 {
+                font-size: 2.4rem;
+            }
+
+            .field input {
+                height: 50px;
+                font-size: 0.96rem;
+            }
+
+            .submit-btn {
+                height: 52px;
+            }
+
+            .demo-box {
+                font-size: 0.78rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-video-wrap" aria-hidden="true">
+        <video autoplay muted loop playsinline poster="https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1400&q=80">
+            <source src="https://cdn.coverr.co/videos/coverr-cars-driving-through-the-city-1568303441185/1080p.mp4" type="video/mp4">
+        </video>
+        <div class="pattern"></div>
+    </div>
+
+    <div class="app-shell">
+        <div class="brand-panel">
+            <div class="brand-mark">
+                <div class="icon"><i class="fa-solid fa-bullhorn"></i></div>
+                <span>Gunupur Matters</span>
+            </div>
+
+            <div class="hero-copy">
+                <h1>Bring <span class="accent">community issues</span> to action.</h1>
+                <p>
+                    Monitor civic reports, follow their lifecycle, and keep every complaint visible and trackable from intake to completion.
+                </p>
+
+                <div class="hero-stats">
+                    <div class="stat">
+                        <strong>24/7</strong>
+                        <span>Monitoring</span>
+                    </div>
+                    <div class="stat">
+                        <strong>6-step</strong>
+                        <span>Resolution flow</span>
+                    </div>
+                    <div class="stat">
+                        <strong>Live</strong>
+                        <span>Issue tracking</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="login-panel">
+            <div class="login-card">
+                <div class="security-badge">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Secure admin access
+                </div>
+
+                <h2>Welcome back</h2>
+                <p>Use your admin credentials to access the dashboard and update report status.</p>
+
+                <div class="notice" id="loginNotice">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span id="noticeText">Invalid login.</span>
+                </div>
+
+                <form class="login-form" method="post" action="auth.php">
+                    <div class="field">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="username" name="username" placeholder="Username" required autocomplete="username">
+                    </div>
+
+                    <div class="field password-field">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="password" name="password" placeholder="Password" required autocomplete="current-password">
+                        <button type="button" class="toggle-password" aria-label="Show password" onclick="togglePassword()">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+
+                    <div class="row">
+                        <label class="remember">
+                            <input type="checkbox" name="remember" value="1">
+                            <span>Remember me</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        Access dashboard
+                    </button>
+                </form>
+
+                <div class="demo-box">
+                    <strong>Demo admin:</strong> username: admin<br>
+                    password: admin123
+                </div>
+
+                <div class="footer-note">Protected admin console for Gunupur Matters</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const notice = document.getElementById('loginNotice');
+        const noticeText = document.getElementById('noticeText');
+        const urlParams = new URLSearchParams(window.location.search);
+
+        if (urlParams.get('error') === '1') {
+            notice.classList.add('show');
+            noticeText.textContent = 'Incorrect username or password. Please try again.';
+        }
+
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggle = document.querySelector('.toggle-password i');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggle.classList.remove('fa-eye');
+                toggle.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggle.classList.remove('fa-eye-slash');
+                toggle.classList.add('fa-eye');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Admin Dashboard | Gunupur Matters</title>
+
+    <meta
+        name="description"
+        content="Gunupur Matters administration dashboard for managing community reports."
+    >
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+    <!-- Admin CSS -->
+    <link
+        rel="stylesheet"
+        href="admin.css"
+    >
+
+</head>
+
+
+<body>
+
+
+<!-- =========================================================
+     ADMIN HEADER
+========================================================= -->
+
+<header class="admin-header">
+
+    <div class="header-left">
+
+        <button
+            class="sidebar-toggle"
+            id="sidebarToggle"
+            aria-label="Toggle sidebar"
+        >
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+
+        <a
+            href="../index.html"
+            class="brand"
+        >
+
+            <span class="brand-icon">
+                <i class="fa-solid fa-bullhorn"></i>
+            </span>
+
+            <span class="brand-text">
+
+                <strong>Gunupur</strong>
+
+                <span>Matters</span>
+
+            </span>
+
+        </a>
+
+
+        <span class="admin-badge">
+            ADMIN
+        </span>
+
+    </div>
+
+
+    <div class="header-right">
+
+        <div class="admin-user">
+
+            <div class="user-avatar">
+                <i class="fa-solid fa-user"></i>
+            </div>
+
+            <div class="user-info">
+
+                <strong>Administrator</strong>
+
+                <span>Admin Account</span>
+
+            </div>
+
+            <i class="fa-solid fa-chevron-down user-chevron"></i>
+
+        </div>
+
+
+        <button
+            class="logout-button"
+            id="logoutButton"
+        >
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Logout</span>
+        </button>
+
+    </div>
+
+</header>
+
+
+<!-- =========================================================
+     MOBILE OVERLAY
+========================================================= -->
+
+<div
+    class="sidebar-overlay"
+    id="sidebarOverlay"
+></div>
+
+
+
+<!-- =========================================================
+     ADMIN LAYOUT
+========================================================= -->
+
+<div class="admin-layout">
+
+
+<!-- =========================================================
+     SIDEBAR
+========================================================= -->
+
+<aside
+    class="admin-sidebar"
+    id="adminSidebar"
+>
+
+    <div class="sidebar-menu">
+
+
+        <span class="sidebar-heading">
+            MAIN MENU
+        </span>
+        <span class="sidebar-heading">
+            <a href="index.html">HOME</a>
+        </span>
+
+
+        <button
+            class="sidebar-link active"
+            data-view="dashboard"
+        >
+
+            <i class="fa-solid fa-chart-pie"></i>
+
+            <span>Dashboard</span>
+
+        </button>
+
+
+        <button
+            class="sidebar-link"
+            data-view="reports"
+        >
+
+            <i class="fa-solid fa-file-lines"></i>
+
+            <span>All Reports</span>
+
+            <span
+                class="sidebar-count"
+                id="sidebarReportCount"
+            >
+                0
+            </span>
+
+        </button>
+
+
+        <button
+            class="sidebar-link"
+            data-filter-status="Under Review"
+        >
+
+            <i class="fa-solid fa-clock"></i>
+
+            <span>Under Review</span>
+
+            <span
+                class="sidebar-count warning"
+                id="sidebarReviewCount"
+            >
+                0
+            </span>
+
+        </button>
+
+
+        <button
+            class="sidebar-link"
+            data-filter-status="Follow-up Initiated"
+        >
+
+            <i class="fa-solid fa-arrow-up-right-dots"></i>
+
+            <span>Follow-up</span>
+
+            <span
+                class="sidebar-count success"
+                id="sidebarFollowupCount"
+            >
+                0
+            </span>
+
+        </button>
+
+
+        <button
+            class="sidebar-link"
+            data-filter-status="Completed"
+        >
+
+            <i class="fa-solid fa-circle-check"></i>
+
+            <span>Completed</span>
+
+            <span
+                class="sidebar-count success"
+                id="sidebarClosedCount"
+            >
+                0
+            </span>
+
+        </button>
+
+
+        <button
+            class="sidebar-link"
+            data-filter-priority="High"
+        >
+
+            <i class="fa-solid fa-triangle-exclamation"></i>
+
+            <span>High Priority</span>
+
+            <span
+                class="sidebar-count danger"
+                id="sidebarHighCount"
+            >
+                0
+            </span>
+
+        </button>
+
+
+
+        <span class="sidebar-heading sidebar-heading-spaced">
+            MANAGEMENT
+        </span>
+
+
+        <button
+            class="sidebar-link"
+            data-view="analytics"
+        >
+
+            <i class="fa-solid fa-chart-column"></i>
+
+            <span>Analytics</span>
+
+        </button>
+
+
+        <button
+            class="sidebar-link"
+            id="exportReports"
+        >
+
+            <i class="fa-solid fa-download"></i>
+
+            <span>Export Reports</span>
+
+        </button>
+
+
+        <button
+            class="sidebar-link"
+            data-view="settings"
+        >
+
+            <i class="fa-solid fa-gear"></i>
+
+            <span>Settings</span>
+
+        </button>
+
+
+        <button
+            class="sidebar-link"
+            data-view="archive"
+        >
+
+            <i class="fa-solid fa-box-archive"></i>
+
+            <span>Archive</span>
+
+        </button>
+
+    </div>
+
+
+
+    <!-- SECURITY CARD -->
+
+    <div class="security-card">
+
+        <div class="security-icon">
+
+            <i class="fa-solid fa-shield-halved"></i>
+
+        </div>
+
+        <h4>
+            Secure Admin Area
+        </h4>
+
+        <p>
+            Only authorized personnel should access
+            community report information.
+        </p>
+
+    </div>
+
+</aside>
+
+
+
+<!-- =========================================================
+     MAIN CONTENT
+========================================================= -->
+
+<main class="admin-main">
+
+
+<!-- =========================================================
+     DASHBOARD VIEW
+========================================================= -->
+
+<section
+    class="admin-view active"
+    id="dashboardView"
+>
+
+
+    <!-- PAGE HEADER -->
+
+    <div class="page-header">
+
+        <div>
+
+            <span class="page-eyebrow">
+                ADMINISTRATION
+            </span>
+
+            <h1>
+                Dashboard
+            </h1>
+
+            <p>
+                Monitor and manage community reports
+                submitted through Gunupur Matters.
+            </p>
+
+        </div>
+
+
+        <div class="page-actions">
+
+            <button
+                class="secondary-button"
+                id="refreshDashboard"
+            >
+
+                <i class="fa-solid fa-rotate"></i>
+
+                Refresh
+
+            </button>
+
+
+            <button
+                class="primary-button"
+                id="dashboardExport"
+            >
+
+                <i class="fa-solid fa-download"></i>
+
+                Export Reports
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         STATISTICS
+    ===================================================== -->
+
+    <div class="stats-grid">
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon blue">
+
+                <i class="fa-solid fa-file-lines"></i>
+
+            </div>
+
+            <div class="stat-content">
+
+                <span>
+                    Total Reports
+                </span>
+
+                <strong id="totalReports">
+                    0
+                </strong>
+
+                <small>
+                    All submitted reports
+                </small>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon orange">
+
+                <i class="fa-solid fa-clock"></i>
+
+            </div>
+
+            <div class="stat-content">
+
+                <span>
+                    Under Review
+                </span>
+
+                <strong id="underReviewReports">
+                    0
+                </strong>
+
+                <small>
+                    Currently being reviewed
+                </small>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon purple">
+
+                <i class="fa-solid fa-arrow-up-right-dots"></i>
+
+            </div>
+
+            <div class="stat-content">
+
+                <span>
+                    Follow-up
+                </span>
+
+                <strong id="followupReports">
+                    0
+                </strong>
+
+                <small>
+                    Active follow-ups
+                </small>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon red">
+
+                <i class="fa-solid fa-triangle-exclamation"></i>
+
+            </div>
+
+            <div class="stat-content">
+
+                <span>
+                    High Priority
+                </span>
+
+                <strong id="highPriorityReports">
+                    0
+                </strong>
+
+                <small>
+                    Requires attention
+                </small>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon green">
+
+                <i class="fa-solid fa-circle-check"></i>
+
+            </div>
+
+            <div class="stat-content">
+
+                <span>
+                    Closed
+                </span>
+
+                <strong id="closedReports">
+                    0
+                </strong>
+
+                <small>
+                    Completed reports
+                </small>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         REPORT MANAGEMENT
+    ===================================================== -->
+
+    <div class="content-grid">
+
+
+        <!-- REPORT TABLE -->
+
+        <div class="panel reports-panel">
+
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Community Reports
+                    </h2>
+
+                    <p>
+                        Review and manage submitted issues.
+                    </p>
+
+                </div>
+
+
+                <button
+                    class="text-button"
+                    id="viewAllReports"
+                >
+                    View All
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+
+            </div>
+
+
+
+            <!-- FILTERS -->
+
+            <div class="report-filters">
+
+                <div class="search-box">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input
+                        type="search"
+                        id="reportSearch"
+                        placeholder="Search by ID, title, location..."
+                    >
+
+                </div>
+
+
+                <select id="statusFilter">
+
+                    <option value="">
+                        All Status
+                    </option>
+
+                    <option value="Pending Review">
+                        Pending Review
+                    </option>
+
+                    <option value="Report Submitted">
+                        Report Submitted
+                    </option>
+
+                    <option value="Under Review">
+                        Under Review
+                    </option>
+
+                    <option value="Follow-up Initiated">
+                        Follow-up Initiated
+                    </option>
+
+                    <option value="Under Process">
+                        Under Process
+                    </option>
+
+                    <option value="Completed">
+                        Completed
+                    </option>
+
+                </select>
+
+
+                <select id="categoryFilter">
+
+                    <option value="">
+                        All Categories
+                    </option>
+
+                </select>
+
+
+                <select id="priorityFilter">
+
+                    <option value="">
+                        All Priorities
+                    </option>
+
+                    <option value="High">
+                        High
+                    </option>
+
+                    <option value="Medium">
+                        Medium
+                    </option>
+
+                    <option value="Low">
+                        Low
+                    </option>
+
+                </select>
+
+            </div>
+
+
+
+            <!-- TABLE -->
+
+            <div class="table-wrapper">
+
+                <table class="reports-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Report ID
+                            </th>
+
+                            <th>
+                                Issue
+                            </th>
+
+                            <th>
+                                Category
+                            </th>
+
+                            <th>
+                                Location
+                            </th>
+
+                            <th>
+                                Priority
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Submitted
+                            </th>
+
+                            <th>
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="reportsTableBody">
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+
+            <!-- EMPTY -->
+
+            <div
+                class="table-empty"
+                id="tableEmpty"
+            >
+
+                <div class="empty-icon">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+
+                <h3>
+                    No reports found
+                </h3>
+
+                <p>
+                    Try changing your search or filters.
+                </p>
+
+            </div>
+
+
+
+            <!-- PAGINATION -->
+
+            <div class="table-footer">
+
+                <span id="tableSummary">
+                    Showing 0 reports
+                </span>
+
+                <div
+                    class="pagination"
+                    id="pagination"
+                ></div>
+
+            </div>
+
+        </div>
+
+
+        <!-- QUICK ACTIVITY -->
+
+        <div class="panel activity-panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Recent Activity
+                    </h2>
+
+                    <p>
+                        Latest report activity.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="activity-list"
+                id="activityList"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+</section>
+
+
+
+<!-- =========================================================
+     REPORTS VIEW
+========================================================= -->
+
+<section
+    class="admin-view"
+    id="reportsView"
+>
+
+    <div class="page-header">
+
+        <div>
+
+            <span class="page-eyebrow">
+                REPORT MANAGEMENT
+            </span>
+
+            <h1>
+                All Reports
+            </h1>
+
+            <p>
+                Search, review and manage all community reports.
+            </p>
+
+        </div>
+
+        <div class="page-actions">
+
+            <button
+                class="secondary-button"
+                id="reportsRefresh"
+            >
+                <i class="fa-solid fa-rotate"></i>
+                Refresh
+            </button>
+
+            <button
+                class="primary-button"
+                id="reportsExport"
+            >
+                <i class="fa-solid fa-download"></i>
+                Export
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="panel full-reports-panel">
+
+        <div class="report-filters large-filters">
+
+            <div class="search-box">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="search"
+                    id="allReportSearch"
+                    placeholder="Search reports..."
+                >
+
+            </div>
+
+
+            <select id="allStatusFilter">
+
+                <option value="">
+                    All Status
+                </option>
+
+                <option value="Pending Review">
+                    Pending Review
+                </option>
+
+                <option value="Report Submitted">
+                    Report Submitted
+                </option>
+
+                <option value="Under Review">
+                    Under Review
+                </option>
+
+                <option value="Follow-up Initiated">
+                    Follow-up Initiated
+                </option>
+
+                <option value="Under Process">
+                    Under Process
+                </option>
+
+                <option value="Completed">
+                    Completed
+                </option>
+
+            </select>
+
+
+            <select id="allPriorityFilter">
+
+                <option value="">
+                    All Priorities
+                </option>
+
+                <option value="High">
+                    High
+                </option>
+
+                <option value="Medium">
+                    Medium
+                </option>
+
+                <option value="Low">
+                    Low
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div
+            class="reports-card-grid"
+            id="reportsCardGrid"
+        ></div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     ANALYTICS VIEW
+========================================================= -->
+
+<section
+    class="admin-view"
+    id="analyticsView"
+>
+
+    <div class="page-header">
+
+        <div>
+
+            <span class="page-eyebrow">
+                REPORT INSIGHTS
+            </span>
+
+            <h1>
+                Analytics
+            </h1>
+
+            <p>
+                Understand report trends and community issues.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="analytics-grid">
+
+
+        <div class="panel analytics-card">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Reports by Status
+                    </h2>
+
+                    <p>
+                        Current report distribution.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="status-chart"
+                id="statusChart"
+            ></div>
+
+        </div>
+
+
+
+        <div class="panel analytics-card">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Reports by Category
+                    </h2>
+
+                    <p>
+                        Community issue categories.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="category-chart"
+                id="categoryChart"
+            ></div>
+
+        </div>
+
+
+
+        <div class="panel analytics-card wide">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Report Summary
+                    </h2>
+
+                    <p>
+                        Overall report statistics.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="analytics-summary"
+                id="analyticsSummary"
+            ></div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     SETTINGS VIEW
+========================================================= -->
+
+<section
+    class="admin-view"
+    id="settingsView"
+>
+
+    <div class="page-header">
+
+        <div>
+
+            <span class="page-eyebrow">
+                SYSTEM
+            </span>
+
+            <h1>
+                Settings
+            </h1>
+
+            <p>
+                Configure the administration interface.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="settings-grid">
+
+
+        <div class="panel settings-card">
+
+            <div class="settings-icon">
+
+                <i class="fa-solid fa-user-shield"></i>
+
+            </div>
+
+            <div>
+
+                <h3>
+                    Administrator Account
+                </h3>
+
+                <p>
+                    Administrator authentication will be
+                    connected to the PHP backend.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="panel settings-card">
+
+            <div class="settings-icon">
+
+                <i class="fa-solid fa-database"></i>
+
+            </div>
+
+            <div>
+
+                <h3>
+                    Data Source
+                </h3>
+
+                <p>
+                    The frontend is structured so that
+                    reports can later be loaded through
+                    PHP/MySQL APIs.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="panel settings-card">
+
+            <div class="settings-icon">
+
+                <i class="fa-solid fa-shield-halved"></i>
+
+            </div>
+
+            <div>
+
+                <h3>
+                    Privacy & Security
+                </h3>
+
+                <p>
+                    Public users should only see information
+                    associated with their report ID.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     ARCHIVE VIEW
+========================================================= -->
+
+<section
+    class="admin-view"
+    id="archiveView"
+>
+
+    <div class="page-header">
+
+        <div>
+
+            <span class="page-eyebrow">
+                DATA MANAGEMENT
+            </span>
+
+            <h1>
+                Archive
+            </h1>
+
+            <p>
+                Review deleted and stored report records.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="panel archive-panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h2>
+                    Archived Reports
+                </h2>
+
+                <p>
+                    Deleted items will appear here when the archive backup is enabled.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            class="archive-empty"
+            id="archiveEmpty"
+        >
+
+            <div class="empty-icon">
+                <i class="fa-solid fa-box-archive"></i>
+            </div>
+
+            <h3>
+                No archived reports yet
+            </h3>
+
+            <p>
+                Deleted reports will appear here for backup and review.
+            </p>
+
+        </div>
+
+
+        <div
+            class="archive-list"
+            id="archiveList"
+        ></div>
+
+    </div>
+
+</section>
+
+
+</main>
+
+</div>
+
+
+
+<!-- =========================================================
+     REPORT DETAILS DRAWER
+========================================================= -->
+
+<div
+    class="details-overlay"
+    id="detailsOverlay"
+></div>
+
+
+<aside
+    class="report-drawer"
+    id="reportDrawer"
+>
+
+    <div class="drawer-header">
+
+        <div>
+
+            <span>
+                REPORT DETAILS
+            </span>
+
+            <h2 id="drawerReportId">
+                —
+            </h2>
+
+        </div>
+
+
+        <button
+            class="drawer-close"
+            id="drawerClose"
+        >
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+    </div>
+
+
+
+    <div class="drawer-body">
+
+
+        <div class="drawer-status-row">
+
+            <span
+                id="drawerStatus"
+                class="status-badge"
+            >
+                —
+            </span>
+
+            <span
+                id="drawerPriority"
+                class="priority-badge"
+            >
+                —
+            </span>
+
+        </div>
+
+
+
+        <div class="drawer-title">
+
+            <span>
+                ISSUE
+            </span>
+
+            <h3 id="drawerTitle">
+                —
+            </h3>
+
+        </div>
+
+
+
+        <!-- DETAILS -->
+
+        <div class="detail-section">
+
+            <h4>
+                Report Information
+            </h4>
+
+
+            <div class="detail-list">
+
+                <div class="detail-row">
+
+                    <span>
+                        <i class="fa-solid fa-layer-group"></i>
+                        Category
+                    </span>
+
+                    <strong id="drawerCategory">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <span>
+                        <i class="fa-solid fa-location-dot"></i>
+                        Location
+                    </span>
+
+                    <strong id="drawerLocation">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <span>
+                        <i class="fa-regular fa-calendar"></i>
+                        Submitted
+                    </span>
+
+                    <strong id="drawerDate">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <span>
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        Last Updated
+                    </span>
+
+                    <strong id="drawerUpdated">
+                        —
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- REPORTER -->
+
+        <div class="detail-section">
+
+            <h4>
+                Reporter Information
+            </h4>
+
+
+            <div class="detail-list">
+
+                <div class="detail-row">
+
+                    <span>
+                        <i class="fa-solid fa-user"></i>
+                        Name
+                    </span>
+
+                    <strong id="drawerReporter">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <span>
+                        <i class="fa-solid fa-phone"></i>
+                        Contact
+                    </span>
+
+                    <strong id="drawerContact">
+                        —
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- DESCRIPTION -->
+
+        <div class="detail-section">
+
+            <h4>
+                Issue Description
+            </h4>
+
+            <div class="drawer-description">
+
+                <p id="drawerDescription">
+                    —
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- PHOTO -->
+
+        <div
+            class="detail-section"
+            id="drawerPhotoSection"
+        >
+
+            <h4>
+                Uploaded Photograph
+            </h4>
+
+            <div class="drawer-photo">
+
+                <img
+                    id="drawerPhoto"
+                    src=""
+                    alt="Report photograph"
+                >
+
+            </div>
+
+        </div>
+
+
+
+        <!-- STATUS UPDATE -->
+
+        <div class="detail-section update-section">
+
+            <h4>
+                Update Report
+            </h4>
+
+
+            <label for="drawerStatusSelect">
+                Report Status
+            </label>
+
+
+            <select id="drawerStatusSelect">
+
+                <option value="Pending Review">
+                    Pending Review
+                </option>
+
+                <option value="Report Submitted">
+                    Report Submitted
+                </option>
+
+                <option value="Under Review">
+                    Under Review
+                </option>
+
+                <option value="Follow-up Initiated">
+                    Follow-up Initiated
+                </option>
+
+                <option value="Under Process">
+                    Under Process
+                </option>
+
+                <option value="Completed">
+                    Completed
+                </option>
+
+            </select>
+
+
+            <label for="adminActionSelect">
+                Admin Action
+            </label>
+
+            <select id="adminActionSelect">
+                <option value="Review">
+                    Review
+                </option>
+                <option value="Approve">
+                    Approve
+                </option>
+                <option value="Follow-up">
+                    Follow-up
+                </option>
+                <option value="Close">
+                    Close
+                </option>
+                <option value="Delete">
+                    Delete / Archive
+                </option>
+            </select>
+
+
+            <label for="followupNote">
+                Follow-up / Admin Note
+            </label>
+
+
+            <textarea
+                id="followupNote"
+                rows="4"
+                placeholder="Write an internal follow-up note..."
+            ></textarea>
+
+
+            <label for="deleteReason">
+                Reason before deleting the report
+            </label>
+
+            <textarea
+                id="deleteReason"
+                rows="3"
+                placeholder="Example: Duplicate report, invalid issue, false complaint, incorrect details..."
+            ></textarea>
+
+
+            <button
+                class="primary-button full-button"
+                id="saveReportUpdate"
+            >
+
+                <i class="fa-solid fa-check"></i>
+
+                Save Update
+
+            </button>
+
+
+            <button
+                class="danger-button full-button"
+                id="deleteReportBtn"
+                type="button"
+            >
+
+                <i class="fa-solid fa-trash"></i>
+
+                Delete Report
+
+            </button>
+
+        </div>
+
+
+    </div>
+
+</aside>
+
+
+
+<!-- =========================================================
+     TOAST
+========================================================= -->
+
+<div
+    class="admin-toast"
+    id="adminToast"
+>
+
+    <div class="toast-icon">
+
+        <i class="fa-solid fa-check"></i>
+
+    </div>
+
+    <div>
+
+        <strong id="toastTitle">
+            Success
+        </strong>
+
+        <p id="toastMessage">
+            Action completed successfully.
+        </p>
+
+    </div>
+
+    <button id="toastClose">
+
+        <i class="fa-solid fa-xmark"></i>
+
+    </button>
+
+</div>
+
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
+<script src="admin.js"></script>
+
+</body>
+
+</html>

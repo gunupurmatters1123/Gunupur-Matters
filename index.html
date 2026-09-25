@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description"
+          content="Gunupur Matters - Report local community issues and track follow-up.">
+
+    <title>Gunupur Matters | Your Problem. Your Voice. Our Follow-up.</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
+
+<!-- ================= NAVBAR ================= -->
+
+<header class="navbar" id="navbar">
+
+    <div class="container nav-container">
+
+        <a href="#home" class="brand" aria-label="Gunupur Matters Home">
+            <span class="brand-icon">
+                <i class="fa-solid fa-flag"></i>
+            </span>
+
+            <span class="brand-text">
+                <strong>Gunupur</strong>
+                <span>Matters</span>
+            </span>
+        </a>
+
+        <nav class="nav-menu" id="navMenu">
+
+            <a href="#home" class="nav-link active">Home</a>
+            <a href="#how-it-works" class="nav-link">How It Works</a>
+            <a href="#categories" class="nav-link">Issues</a>
+            <a href="#transparency" class="nav-link">Transparency</a>
+            <a href="about.html" class="nav-link">About</a>
+
+            <a href="#report" class="nav-report">
+                Report an Issue
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
+
+        </nav>
+
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+    </div>
+
+</header>
+
+
+<!-- ================= HERO ================= -->
+
+<main>
+
+<section class="hero" id="home">
+
+    <div class="hero-background"></div>
+
+    <div class="container hero-grid">
+
+        <div class="hero-content">
+
+            <div class="hero-badge">
+                <span class="pulse-dot"></span>
+                Your community deserves to be heard
+            </div>
+
+            <h1>
+                Your Problem.
+                <span>Your Voice.</span>
+                Our Follow-up.
+            </h1>
+
+            <p class="hero-description">
+                Report genuine issues affecting your community.
+                We review, document and follow up with the appropriate
+                authorities or organizations where possible.
+            </p>
+
+            <div class="hero-buttons">
+
+                <a href="report.html" class="btn btn-primary">
+                    <i class="fa-solid fa-flag"></i>
+                    Report an Issue
+                </a>
+
+                <a href="track.html" class="btn btn-secondary">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    Track Your Report
+                </a>
+
+            </div>
+
+            <div class="trust-line">
+                <i class="fa-solid fa-shield-halved"></i>
+                Your information is handled responsibly.
+            </div>
+
+        </div>
+
+
+        <div class="hero-visual">
+
+            <div class="community-card">
+
+                <div class="community-card-header">
+
+                    <div class="mini-logo">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </div>
+
+                    <div>
+                        <strong>Community Report</strong>
+                        <span>Follow-up in progress</span>
+                    </div>
+
+                    <span class="status-dot"></span>
+
+                </div>
+
+
+                <div class="map-placeholder">
+
+                    <div class="map-grid"></div>
+
+                    <div class="map-pin pin-one">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </div>
+
+                    <div class="map-pin pin-two">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </div>
+
+                    <div class="map-pin pin-three">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </div>
+
+                    <div class="map-center">
+                        <div class="radar"></div>
+                        <i class="fa-solid fa-location-dot"></i>
+                    </div>
+
+                </div>
+
+
+                <div class="report-preview">
+
+                    <div class="preview-icon water">
+                        <i class="fa-solid fa-droplet"></i>
+                    </div>
+
+                    <div class="preview-text">
+                        <strong>Water Supply Issue</strong>
+                        <span>Ward 12 • Reported today</span>
+                    </div>
+
+                    <span class="preview-status">
+                        Under Review
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="floating-card floating-one">
+                <div class="floating-icon">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+
+                <div>
+                    <strong>Verified</strong>
+                    <span>Issue reviewed</span>
+                </div>
+            </div>
+
+
+            <div class="floating-card floating-two">
+                <div class="floating-icon orange">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+
+                <div>
+                    <strong>Trackable</strong>
+                    <span>Every report has an ID</span>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="hero-wave"></div>
+
+</section>
+
+
+<!-- ================= STATS ================= -->
+
+<section class="stats-section">
+    <h3>Every step will start soon!</h3>
+    <div class="container stats-grid">
+
+        <div class="stat-item">
+            <div class="stat-icon">
+                <i class="fa-solid fa-file-circle-plus"></i>
+            </div>
+
+            <div>
+                
+                <strong id="reportsCount">0</strong>
+                <span>Reports Received</span>
+            </div>
+        </div>
+
+
+        <div class="stat-item">
+            <div class="stat-icon">
+                <i class="fa-solid fa-clock"></i>
+            </div>
+
+            <div>
+                <strong id="reviewCount">0</strong>
+                <span>Under Review</span>
+            </div>
+        </div>
+
+
+        <div class="stat-item">
+            <div class="stat-icon">
+                <i class="fa-solid fa-arrow-up-right-dots"></i>
+            </div>
+
+            <div>
+                <strong id="followupCount">0</strong>
+                <span>Follow-ups</span>
+            </div>
+        </div>
+
+
+        <div class="stat-item">
+            <div class="stat-icon">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+
+            <div>
+                <strong id="closedCount">0</strong>
+                <span>Cases Closed</span>
+            </div>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= INTRO ================= -->
+
+<section class="section intro-section">
+
+    <div class="container">
+
+        <div class="section-heading center">
+
+            <span class="eyebrow">
+                YOUR VOICE MATTERS
+            </span>
+
+            <h2>
+                Small reports can lead to
+                <span>meaningful change.</span>
+            </h2>
+
+            <p>
+                A damaged road. A broken street light. Poor sanitation.
+                Water problems. Public infrastructure concerns.
+            </p>
+
+        </div>
+
+
+        <div class="intro-grid">
+
+            <div class="intro-image">
+
+    <img src="Photos/prom_team.png"
+         alt="Community members and local public surroundings in Odisha">
+
+    <div class="image-overlay"></div>
+
+    <div class="image-content">
+
+        <span class="quote-icon">
+            <i class="fa-solid fa-quote-left"></i>
+        </span>
+
+        <h3>
+            "When communities speak, <br> problems become visible."
+        </h3>
+
+    </div>
+
+</div>
+
+
+            <div class="intro-content">
+
+                <h3>
+                    A simple way to make your
+                    community's concerns visible.
+                </h3>
+
+                <p>
+                    Community Voice provides a structured way for residents
+                    to report genuine local issues and help bring them to
+                    the attention of the appropriate authorities.
+                </p>
+
+                <div class="check-list">
+
+                    <div>
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Report genuine community problems</span>
+                    </div>
+
+                    <div>
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Upload supporting photographs</span>
+                    </div>
+
+                    <div>
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Receive a unique report ID</span>
+                    </div>
+
+                    <div>
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Track available updates</span>
+                    </div>
+
+                </div>
+
+                <a href="#report" class="text-link">
+                    Start a report
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= HOW IT WORKS ================= -->
+
+<section class="section process-section" id="how-it-works">
+
+    <div class="container">
+
+        <div class="section-heading center">
+
+            <span class="eyebrow">
+                HOW IT WORKS
+            </span>
+
+            <h2>
+                From report to
+                <span>follow-up.</span>
+            </h2>
+
+            <p>
+                A transparent process designed to keep reports organized
+                and responsibly handled.
+            </p>
+
+        </div>
+
+
+        <div class="process-grid">
+
+            <div class="process-card">
+
+                <div class="process-number">01</div>
+
+                <div class="process-icon">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+
+                <h3>Report</h3>
+
+                <p>
+                    Tell us what is happening. Provide the location,
+                    description and supporting evidence where possible.
+                </p>
+
+            </div>
+
+
+            <div class="process-card">
+
+                <div class="process-number">02</div>
+
+                <div class="process-icon">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+
+                <h3>Review</h3>
+
+                <p>
+                    Every submission is reviewed. Reports and allegations
+                    remain unverified until appropriately assessed.
+                </p>
+
+            </div>
+
+
+            <div class="process-card">
+
+                <div class="process-number">03</div>
+
+                <div class="process-icon">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+
+                <h3>Verify</h3>
+
+                <p>
+                    Where possible, available evidence and information
+                    are reviewed to understand the reported issue.
+                </p>
+
+            </div>
+
+
+            <div class="process-card">
+
+                <div class="process-number">04</div>
+
+                <div class="process-icon">
+                    <i class="fa-solid fa-share-from-square"></i>
+                </div>
+
+                <h3>Follow Up</h3>
+
+                <p>
+                    Genuine issues may be brought to the attention
+                    of the relevant authority or organization.
+                </p>
+
+            </div>
+
+
+            <div class="process-card">
+
+                <div class="process-number">05</div>
+
+                <div class="process-icon">
+                    <i class="fa-solid fa-fingerprint"></i>
+                </div>
+
+                <h3>Track</h3>
+
+                <p>
+                    Your report receives a unique reference ID so
+                    you can check its latest available status.
+                </p>
+
+            </div>
+
+
+            <div class="process-card">
+
+                <div class="process-number">06</div>
+
+                <div class="process-icon">
+                    <i class="fa-solid fa-flag-checkered"></i>
+                </div>
+
+                <h3>Outcome</h3>
+
+                <p>
+                    When a meaningful response or update is received,
+                    the report can eventually be closed.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= CATEGORIES ================= -->
+
+<section class="section categories-section" id="categories">
+
+    <div class="container">
+
+        <div class="section-heading">
+
+            <span class="eyebrow">
+                WHAT CAN YOU REPORT?
+            </span>
+
+            <h2>
+                Speak up about issues
+                <span>that matter.</span>
+            </h2>
+
+            <p>
+                Choose a category that best describes the problem
+                affecting your community.
+            </p>
+
+        </div>
+
+
+        <!-- <div id="background_img">
+            <img src="Photos/sephali_gnprl.png" alt="">
+        </div> -->
+
+
+        <div class="category-grid">
+
+            <button class="category-card" data-category="Roads & Infrastructure">
+                <span class="category-icon road">
+                    <i class="fa-solid fa-road"></i>
+                </span>
+
+                <span>
+                    <strong>Roads & Infrastructure</strong>
+                    <small>Potholes, roads, drainage and public infrastructure.</small>
+                </span>
+
+                <i class="fa-solid fa-arrow-up-right-from-square category-arrow"></i>
+            </button>
+
+
+            <button class="category-card" data-category="Street Lights">
+                <span class="category-icon light">
+                    <i class="fa-solid fa-lightbulb"></i>
+                </span>
+
+                <span>
+                    <strong>Street Lights</strong>
+                    <small>Broken, damaged or missing public lights.</small>
+                </span>
+
+                <i class="fa-solid fa-arrow-up-right-from-square category-arrow"></i>
+            </button>
+
+
+            <button class="category-card" data-category="Water & Sanitation">
+                <span class="category-icon water">
+                    <i class="fa-solid fa-droplet"></i>
+                </span>
+
+                <span>
+                    <strong>Water & Sanitation</strong>
+                    <small>Water supply, drainage and sanitation concerns.</small>
+                </span>
+
+                <i class="fa-solid fa-arrow-up-right-from-square category-arrow"></i>
+            </button>
+
+
+            <button class="category-card" data-category="Cleanliness">
+                <span class="category-icon clean">
+                    <i class="fa-solid fa-trash-can"></i>
+                </span>
+
+                <span>
+                    <strong>Cleanliness</strong>
+                    <small>Garbage, waste management and public cleanliness.</small>
+                </span>
+
+                <i class="fa-solid fa-arrow-up-right-from-square category-arrow"></i>
+            </button>
+
+
+            <button class="category-card" data-category="Education">
+                <span class="category-icon education">
+                    <i class="fa-solid fa-school"></i>
+                </span>
+
+                <span>
+                    <strong>Education</strong>
+                    <small>Public schools and educational infrastructure.</small>
+                </span>
+
+                <i class="fa-solid fa-arrow-up-right-from-square category-arrow"></i>
+            </button>
+
+
+            <button class="category-card" data-category="Public Services">
+                <span class="category-icon service">
+                    <i class="fa-solid fa-building-columns"></i>
+                </span>
+
+                <span>
+                    <strong>Public Services</strong>
+                    <small>Essential public services and facilities.</small>
+                </span>
+
+                <i class="fa-solid fa-arrow-up-right-from-square category-arrow"></i>
+            </button>
+
+
+            <button class="category-card" data-category="Environment">
+                <span class="category-icon environment">
+                    <i class="fa-solid fa-tree"></i>
+                </span>
+
+                <span>
+                    <strong>Environment</strong>
+                    <small>Pollution, waste and environmental concerns.</small>
+                </span>
+
+                <i class="fa-solid fa-arrow-up-right-from-square category-arrow"></i>
+            </button>
+
+
+            <button class="category-card" data-category="Other Community Issue">
+                <span class="category-icon other">
+                    <i class="fa-solid fa-ellipsis"></i>
+                </span>
+
+                <span>
+                    <strong>Other Issues</strong>
+                    <small>Something else affecting your community.</small>
+                </span>
+
+                <i class="fa-solid fa-arrow-up-right-from-square category-arrow"></i>
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= REPORT FORM ================= -->
+
+<section class="section report-section" id="report">
+
+    <div class="container report-layout">
+
+        <div class="report-info">
+
+            <span class="eyebrow">REPORT AN ISSUE</span>
+
+            <h2>
+                Tell us what's
+                <span>happening.</span>
+            </h2>
+
+            <p>
+                Provide as much useful information as possible.
+                Clear descriptions and supporting evidence help us
+                understand the issue.
+            </p>
+
+
+            <div class="report-info-list">
+
+                <div>
+                    <span class="info-icon">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </span>
+
+                    <div>
+                        <strong>Tell us where</strong>
+                        <p>Provide the location of the issue.</p>
+                    </div>
+                </div>
+
+
+                <div>
+                    <span class="info-icon">
+                        <i class="fa-solid fa-camera"></i>
+                    </span>
+
+                    <div>
+                        <strong>Add evidence</strong>
+                        <p>Photographs can help explain the issue.</p>
+                    </div>
+                </div>
+
+
+                <div>
+                    <span class="info-icon">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </span>
+
+                    <div>
+                        <strong>Protect your information</strong>
+                        <p>Don't submit unnecessary sensitive information.</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="report-form-card">
+
+            <form id="reportForm">
+
+                <div class="form-header">
+
+                    <div>
+                        <span class="form-label">NEW REPORT</span>
+                        <h3>Submit a Community Issue</h3>
+                    </div>
+
+                    <span class="form-lock">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+
+                </div>
+
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label for="reporterName">
+                            Your Name
+                            <span>Optional</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="reporterName"
+                            placeholder="Enter your name"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="reporterPhone">
+                            Contact
+                            <span>Optional</span>
+                        </label>
+
+                        <input
+                            type="tel"
+                            id="reporterPhone"
+                            placeholder="Phone or email"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label for="category">
+                            Issue Category
+                            <b>*</b>
+                        </label>
+
+                        <select id="category" required>
+
+                            <option value="">
+                                Select a category
+                            </option>
+
+                            <option>Roads & Infrastructure</option>
+                            <option>Street Lights</option>
+                            <option>Water & Sanitation</option>
+                            <option>Cleanliness</option>
+                            <option>Education</option>
+                            <option>Public Services</option>
+                            <option>Environment</option>
+                            <option>Other Community Issue</option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="priority">
+                            Priority
+                            <b>*</b>
+                        </label>
+
+                        <select id="priority" required>
+
+                            <option value="">
+                                Select priority
+                            </option>
+
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="location">
+                        Location
+                        <b>*</b>
+                    </label>
+
+                    <div class="input-with-icon">
+
+                        <i class="fa-solid fa-location-dot"></i>
+
+                        <input
+                            type="text"
+                            id="location"
+                            placeholder="Area, street, landmark or ward"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="title">
+                        Issue Title
+                        <b>*</b>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="title"
+                        placeholder="Briefly describe the problem"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="description">
+                        Describe the Issue
+                        <b>*</b>
+                    </label>
+
+                    <textarea
+                        id="description"
+                        rows="5"
+                        placeholder="Please provide clear details about what is happening..."
+                        required
+                    ></textarea>
+
+                    <div class="character-count">
+                        <span id="charCount">0</span>/1000
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>
+                        Supporting Photograph
+                        <span>Optional</span>
+                    </label>
+
+                    <label class="upload-box" for="photo">
+
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+
+                        <strong>
+                            Click to upload a photo
+                        </strong>
+
+                        <small>
+                            JPG, PNG or WEBP • Maximum 5MB
+                        </small>
+
+                        <input
+                            type="file"
+                            id="photo"
+                            accept="image/jpeg,image/png,image/webp"
+                            hidden
+                        >
+
+                    </label>
+
+                    <div id="photoPreview" class="photo-preview"></div>
+
+                </div>
+
+
+                <div class="form-consent">
+
+                    <label class="checkbox-label">
+
+                        <input type="checkbox" id="consent" required>
+
+                        <span class="custom-checkbox"></span>
+
+                        <span>
+                            I confirm that the information provided is
+                            accurate to the best of my knowledge and I
+                            understand that submitted allegations may
+                            require verification.
+                        </span>
+
+                    </label>
+
+                </div>
+
+
+                <button type="submit" class="btn btn-primary submit-btn">
+
+                    Submit Report
+
+                    <i class="fa-solid fa-arrow-right"></i>
+
+                </button>
+
+
+                <p class="form-note">
+                    <i class="fa-solid fa-lock"></i>
+                    Please do not submit passwords, bank details,
+                    Aadhaar numbers or unnecessary sensitive information.
+                </p>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= TRACK REPORT ================= -->
+
+<section class="section track-section" id="track">
+
+    <div class="container">
+
+        <div class="track-card">
+
+            <div class="track-content">
+
+                <span class="eyebrow">
+                    TRACK YOUR REPORT
+                </span>
+
+                <h2>
+                    What happened after
+                    <span>you reported it?</span>
+                </h2>
+
+                <p>
+                    Enter your unique Community Voice reference ID
+                    to view the latest available status.
+                </p>
+
+                <form id="trackForm" class="track-form">
+
+                    <div class="track-input">
+
+                        <i class="fa-solid fa-hashtag"></i>
+
+                        <input
+                            type="text"
+                            id="trackId"
+                            placeholder="Example: CV-26-0001"
+                            required
+                        >
+
+                    </div>
+
+                    <a href="track.html" button class="btn btn-primary" type="submit">
+                        Track Report
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button></a>
+
+                </form>
+
+                <div id="trackResult" class="track-result"></div>
+
+            </div>
+
+
+            <div class="track-visual">
+
+                <div class="track-circle circle-one"></div>
+                <div class="track-circle circle-two"></div>
+
+                <div class="track-icon">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+
+                <div class="track-id-card">
+                    <span>REPORT ID</span>
+                    <strong>CV-26-0001</strong>
+                    <small>
+                        <i class="fa-solid fa-circle"></i>
+                        Follow-up Initiated
+                    </small>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= TRANSPARENCY ================= -->
+
+<section class="section transparency-section" id="transparency">
+
+    <div class="container">
+
+        <div class="section-heading center">
+
+            <span class="eyebrow">
+                TRANSPARENCY
+            </span>
+
+            <h2>
+                Trust starts with
+                <span>transparency.</span>
+            </h2>
+
+            <p>
+                Our approach is built around responsible reporting,
+                verification and privacy.
+            </p>
+
+        </div>
+
+
+        <div class="transparency-grid">
+
+            <div class="transparency-card">
+
+                <div class="transparency-icon">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+
+                <h3>Verification First</h3>
+
+                <p>
+                    A submitted complaint or allegation is not automatically
+                    treated as a proven fact.
+                </p>
+
+            </div>
+
+
+            <div class="transparency-card">
+
+                <div class="transparency-icon">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+
+                <h3>Privacy Matters</h3>
+
+                <p>
+                    Personal information should not be unnecessarily
+                    exposed publicly.
+                </p>
+
+            </div>
+
+
+            <div class="transparency-card">
+
+                <div class="transparency-icon">
+                    <i class="fa-solid fa-handshake"></i>
+                </div>
+
+                <h3>Responsible Follow-up</h3>
+
+                <p>
+                    Genuine issues may be brought to the attention
+                    of the relevant authority.
+                </p>
+
+            </div>
+
+
+            <div class="transparency-card">
+
+                <div class="transparency-icon">
+                    <i class="fa-solid fa-chart-simple"></i>
+                </div>
+
+                <h3>Open Impact</h3>
+
+                <p>
+                    We aim to publish appropriate anonymized statistics
+                    as the platform grows.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= ABOUT ================= -->
+
+<section class="section about-section" id="about">
+
+    <div class="container about-grid">
+
+        <div>
+
+            <span class="eyebrow">
+                ABOUT COMMUNITY VOICE
+            </span>
+
+            <h2>
+                A small platform for a
+                <span>bigger voice.</span>
+            </h2>
+
+            <p>
+                Community Voice is an independent community initiative
+                created to listen to local concerns, encourage responsible
+                reporting and document follow-up on genuine public issues.
+            </p>
+
+            <p>
+                Our goal is simple: make it easier for ordinary people
+                to speak about problems affecting their communities and
+                encourage responsible action.
+            </p>
+
+            <div class="about-highlight">
+
+                <i class="fa-solid fa-quote-left"></i>
+
+                <strong>
+                    We don't promise to solve every problem.
+                    We promise to listen, review, document and follow up
+                    where we reasonably can.
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="about-card">
+
+            <div class="about-card-top">
+                <span>COMMUNITY VOICE</span>
+                <i class="fa-solid fa-bullhorn"></i>
+            </div>
+
+            <div class="about-stat">
+                <strong>100%</strong>
+                <span>Focused on responsible community reporting</span>
+            </div>
+
+            <div class="about-divider"></div>
+
+            <div class="about-points">
+
+                <div>
+                    <i class="fa-solid fa-check"></i>
+                    Responsible reporting
+                </div>
+
+                <div>
+                    <i class="fa-solid fa-check"></i>
+                    Verification-first approach
+                </div>
+
+                <div>
+                    <i class="fa-solid fa-check"></i>
+                    Privacy-conscious design
+                </div>
+
+                <div>
+                    <i class="fa-solid fa-check"></i>
+                    Transparent follow-up
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= IMPORTANT ================= -->
+
+<section class="important-section">
+
+    <div class="container">
+
+        <div class="important-card">
+
+            <div class="important-icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+
+            <div>
+
+                <span class="eyebrow">
+                    IMPORTANT
+                </span>
+
+                <h3>
+                    Community Voice is not a government authority,
+                    law-enforcement agency or emergency service.
+                </h3>
+
+                <p>
+                    Submitting a report does not guarantee that an authority
+                    will take action or that the issue will be resolved.
+                    For immediate danger or emergencies, contact the
+                    appropriate emergency service instead of waiting
+                    for a response from Community Voice.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= CTA ================= -->
+
+<section class="cta-section">
+
+    <div class="container">
+
+        <div class="cta-content">
+
+            <div class="cta-icon">
+                <i class="fa-solid fa-bullhorn"></i>
+            </div>
+
+            <span class="eyebrow">
+                READY TO SPEAK UP?
+            </span>
+
+            <h2>
+                Your community.
+                <span>Your voice.</span>
+                Your responsibility.
+            </h2>
+
+            <p>
+                If something is affecting your community,
+                don't simply ignore it. Tell us.
+            </p>
+
+            <a href="report.html" class="btn btn-white">
+                Report an Issue
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+</main>
+
+
+<!-- ================= FOOTER ================= -->
+
+<footer class="footer">
+
+    <div class="container">
+
+        <div class="footer-grid">
+
+            <div class="footer-brand">
+
+                <a href="#home" class="brand footer-logo" aria-label="Gunupur Matters Home">
+
+                    <span class="brand-icon">
+                        <i class="fa-solid fa-flag"></i>
+                    </span>
+
+                    <span class="brand-text">
+                        <strong>Gunupur</strong>
+                        <span>Matters</span>
+                    </span>
+
+                </a>
+
+                <p>
+                    Your Problem. Your Voice. Our Follow-up.
+                </p>
+
+                <p class="footer-small">
+                    An independent community initiative.
+                </p>
+
+            </div>
+
+
+            <div class="footer-column">
+
+                <h4>Explore</h4>
+
+                <a href="#home">Home</a>
+                <a href="#how-it-works">How It Works</a>
+                <a href="#categories">Issues</a>
+                <a href="#transparency">Transparency</a>
+
+            </div>
+
+
+            <div class="footer-column">
+
+                <h4>Get Help</h4>
+
+                <a href="report.html">Report an Issue</a>
+                <a href="track.html">Track Your Report</a>
+                <a href="about.html">About Us</a>
+
+            </div>
+
+
+            <div class="footer-column">
+
+                <h4>Important</h4>
+
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Use</a>
+
+                <span class="footer-security">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Privacy-conscious platform
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="footer-bottom">
+
+            <span>
+                © 2026 Community Voice. All rights reserved.
+            </span>
+
+            <span>
+                Built for responsible community reporting.
+            </span>
+
+        </div>
+
+    </div>
+
+</footer>
+
+
+<!-- ================= TOAST ================= -->
+
+<div id="toast" class="toast">
+
+    <div class="toast-icon">
+        <i class="fa-solid fa-check"></i>
+    </div>
+
+    <div>
+        <strong id="toastTitle">Success</strong>
+        <p id="toastMessage">Action completed.</p>
+    </div>
+
+    <button id="toastClose">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+
+</div>
+
+
+<!-- ================= REPORT SUCCESS MODAL ================= -->
+
+<div class="modal-overlay" id="successModal">
+
+    <div class="success-modal">
+
+        <button class="modal-close" id="modalClose">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="success-animation">
+
+            <div class="success-circle">
+                <i class="fa-solid fa-check"></i>
+            </div>
+
+        </div>
+
+        <span class="eyebrow">
+            REPORT RECEIVED
+        </span>
+
+        <h2>
+            Thank you for speaking up.
+        </h2>
+
+        <p>
+            Your report has been recorded in this demo system.
+            Keep your reference ID to track it later.
+        </p>
+
+        <div class="generated-id">
+
+            <span>YOUR REPORT ID</span>
+
+            <strong id="generatedReportId">
+                CV-26-0001
+            </strong>
+
+            <button id="copyReportId">
+                <i class="fa-regular fa-copy"></i>
+                Copy ID
+            </button>
+
+        </div>
+
+        <button class="btn btn-primary modal-track-btn" id="modalTrackBtn">
+            Track This Report
+            <i class="fa-solid fa-arrow-right"></i>
+        </button>
+
+    </div>
+
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>

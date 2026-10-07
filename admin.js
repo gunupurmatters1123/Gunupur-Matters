@@ -2,12 +2,8 @@
    GUNUPUR MATTERS
    ADMIN DASHBOARD JAVASCRIPT
 
-   Current:
-   - Uses localStorage for development/demo.
-   - Can read reports created by the existing public site.
-
-   Future:
-   - Replace API functions with PHP/MySQL endpoints.
+   Reports are loaded and updated through authenticated PHP endpoints,
+   which store report data in Supabase.
 ========================================================= */
 
 
@@ -17,21 +13,9 @@
 
 const ADMIN_CONFIG = {
 
-    /*
-        When PHP backend is ready:
+    USE_API: true,
 
-        USE_API: true
-
-        Example endpoints:
-
-        /api/admin/reports.php
-        /api/admin/update-report.php
-        /api/admin/followup.php
-    */
-
-    USE_API: false,
-
-    API_BASE: "../api/admin",
+    REPORTS_ENDPOINT: "config/admin-reports.php",
 
     STORAGE_KEY: "communityVoiceReports",
 
@@ -53,6 +37,62 @@ let filteredReports = [];
 let currentPage = 1;
 
 let selectedReportId = null;
+
+function safeGetStorageItem(key) {
+
+    try {
+
+        return localStorage.getItem(key);
+
+    } catch (error) {
+
+        console.warn("localStorage unavailable, falling back to sessionStorage:", error);
+
+        try {
+
+            return sessionStorage.getItem(key);
+
+        } catch (fallbackError) {
+
+            console.error("Storage unavailable in this browser:", fallbackError);
+
+            return null;
+
+        }
+
+    }
+
+}
+
+function safeSetStorageItem(key, value) {
+
+    try {
+
+        localStorage.setItem(key, value);
+
+        return true;
+
+    } catch (error) {
+
+        console.warn("localStorage write failed, falling back to sessionStorage:", error);
+
+        try {
+
+            sessionStorage.setItem(key, value);
+
+            return true;
+
+        } catch (fallbackError) {
+
+            console.error("Storage write failed in this browser:", fallbackError);
+
+            return false;
+
+        }
+
+    }
+
+}
 
 
 /* =========================================================
@@ -133,7 +173,7 @@ function getReportsFromLocalStorage() {
     try {
 
         const stored =
-            localStorage.getItem(
+            safeGetStorageItem(
                 ADMIN_CONFIG.STORAGE_KEY
             );
 
@@ -173,7 +213,7 @@ function getArchivedReportsFromLocalStorage() {
     try {
 
         const stored =
-            localStorage.getItem(
+            safeGetStorageItem(
                 ADMIN_CONFIG.ARCHIVE_STORAGE_KEY
             );
 
@@ -230,7 +270,7 @@ function archiveReport(report, reason = "") {
         archivedEntry
     );
 
-    localStorage.setItem(
+    safeSetStorageItem(
         ADMIN_CONFIG.ARCHIVE_STORAGE_KEY,
         JSON.stringify(archivedReports)
     );
@@ -261,7 +301,7 @@ function restoreArchivedReport(reportId) {
 
     activeReports.unshift(reportToRestore);
 
-    localStorage.setItem(
+    safeSetStorageItem(
         ADMIN_CONFIG.STORAGE_KEY,
         JSON.stringify(activeReports)
     );
@@ -273,7 +313,7 @@ function restoreArchivedReport(reportId) {
                 String(reportId)
         );
 
-    localStorage.setItem(
+    safeSetStorageItem(
         ADMIN_CONFIG.ARCHIVE_STORAGE_KEY,
         JSON.stringify(remainingArchived)
     );
@@ -302,7 +342,7 @@ function permanentlyDeleteArchivedReport(reportId) {
                 String(reportId)
         );
 
-    localStorage.setItem(
+    safeSetStorageItem(
         ADMIN_CONFIG.ARCHIVE_STORAGE_KEY,
         JSON.stringify(remainingArchived)
     );
@@ -481,7 +521,7 @@ function renderArchive() {
 
 
 /* =========================================================
-   FUTURE PHP API
+   PHP API
 ========================================================= */
 
 async function getReportsFromAPI() {
@@ -490,7 +530,7 @@ async function getReportsFromAPI() {
 
         const response =
             await fetch(
-                `${ADMIN_CONFIG.API_BASE}/reports.php`,
+                ADMIN_CONFIG.REPORTS_ENDPOINT,
                 {
                     method: "GET",
 
@@ -516,16 +556,6 @@ async function getReportsFromAPI() {
 
         const data =
             await response.json();
-
-
-        /*
-            Expected PHP response:
-
-            {
-                "success": true,
-                "reports": [...]
-            }
-        */
 
 
         return data.reports || [];
@@ -557,16 +587,6 @@ async function updateReportOnServer(
     note
 ) {
 
-    /*
-        DEVELOPMENT MODE
-
-        Update localStorage.
-
-        This can later be replaced with:
-
-        POST ../api/admin/update-report.php
-    */
-
     if (!ADMIN_CONFIG.USE_API) {
 
         return updateReportLocalStorage(
@@ -582,7 +602,7 @@ async function updateReportOnServer(
 
         const response =
             await fetch(
-                `${ADMIN_CONFIG.API_BASE}/update-report.php`,
+                ADMIN_CONFIG.REPORTS_ENDPOINT,
                 {
 
                     method: "POST",
@@ -1821,13 +1841,7 @@ async function deleteSelectedReport() {
 
     try {
 
-        const stored = localStorage.getItem(
-            ADMIN_CONFIG.STORAGE_KEY
-        );
-
-        const localReports = stored
-            ? JSON.parse(stored)
-            : [];
+        const localReports = getReportsFromLocalStorage();
 
         const reportToArchive = localReports.find(
             report => String(report.id) === String(selectedReportId)
@@ -1843,10 +1857,21 @@ async function deleteSelectedReport() {
             report => String(report.id) !== String(selectedReportId)
         );
 
-        localStorage.setItem(
+        if (!safeSetStorageItem(
             ADMIN_CONFIG.STORAGE_KEY,
             JSON.stringify(updatedReports)
-        );
+        )) {
+
+            throw new Error("Unable to save report removal to storage.");
+
+        }
+
+        reports = updatedReports;
+        filteredReports = Array.isArray(filteredReports)
+            ? filteredReports.filter(
+                report => String(report.id) !== String(selectedReportId)
+            )
+            : [];
 
         if (deleteReasonField) {
 
@@ -1866,11 +1891,11 @@ async function deleteSelectedReport() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error("Delete failed:", error);
 
         showToast(
             "Delete Failed",
-            "The report could not be deleted.",
+            "The report could not be deleted. Please refresh and try again.",
             "error"
         );
 

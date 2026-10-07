@@ -1,14 +1,41 @@
 <?php
+require_once __DIR__ . "/config/database.php";
 
-$password = "ChangeThisPassword123!";
+header("Content-Type: application/json");
 
-$hash = password_hash(
-    $password,
-    PASSWORD_DEFAULT
+$username = trim($_POST["username"] ?? "admin");
+$password = $_POST["password"] ?? "admin123";
+$name = trim($_POST["name"] ?? "Gunupur Matters Admin");
+
+if ($username === "") {
+    http_response_code(400);
+    echo json_encode(["success" => false, "message" => "Username is required."]);
+    exit;
+}
+
+$check = $pdo->prepare("SELECT id FROM admin_users WHERE username = :username LIMIT 1");
+$check->execute([":username" => $username]);
+
+if ($check->fetch()) {
+    $update = $pdo->prepare("UPDATE admin_users SET password_hash = :password_hash, name = :name WHERE username = :username");
+    $update->execute([
+        ":password_hash" => password_hash($password, PASSWORD_DEFAULT),
+        ":name" => $name,
+        ":username" => $username
+    ]);
+
+    echo json_encode(["success" => true, "message" => "Admin account updated.", "username" => $username]);
+    exit;
+}
+
+$insert = $pdo->prepare(
+    "INSERT INTO admin_users (username, password_hash, name, role) VALUES (:username, :password_hash, :name, :role)"
 );
+$insert->execute([
+    ":username" => $username,
+    ":password_hash" => password_hash($password, PASSWORD_DEFAULT),
+    ":name" => $name,
+    ":role" => "admin"
+]);
 
-echo "<h3>Password Hash</h3>";
-
-echo "<p>" .
-     htmlspecialchars($hash) .
-     "</p>";
+echo json_encode(["success" => true, "message" => "Admin account created.", "username" => $username]);

@@ -68,62 +68,6 @@ const trackResult =
 
 
 /* =========================================================
-   STORAGE
-   ========================================================= */
-
-const STORAGE_KEY =
-    "communityVoiceReports";
-
-
-function getReports() {
-
-    try {
-
-        return JSON.parse(
-            localStorage.getItem(STORAGE_KEY)
-        ) || [];
-
-    } catch (error) {
-
-        console.error(error);
-
-        return [];
-
-    }
-
-}
-
-
-function saveReports(reports) {
-
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(reports)
-    );
-
-}
-
-
-/* =========================================================
-   REPORT ID
-   ========================================================= */
-
-function generateReportId() {
-
-    const reports = getReports();
-
-    const year =
-        new Date().getFullYear().toString().slice(-2);
-
-    const number =
-        String(reports.length + 1).padStart(4, "0");
-
-    return `CV-${year}-${number}`;
-
-}
-
-
-/* =========================================================
    NAVIGATION
    ========================================================= */
 
@@ -379,7 +323,7 @@ photo.addEventListener("change", () => {
    REPORT SUBMISSION
    ========================================================= */
 
-reportForm.addEventListener("submit", event => {
+reportForm.addEventListener("submit", async event => {
 
     event.preventDefault();
 
@@ -438,77 +382,68 @@ reportForm.addEventListener("submit", event => {
     }
 
 
-    const reportId =
-        generateReportId();
+    try {
+        let result;
+        const formData = new FormData();
+        formData.set("title", title);
+        formData.set("category", category);
+        formData.set("priority", priority);
+        formData.set("description", issueDescription);
+        formData.set("location", location);
+        formData.set("reporterName", name);
+        formData.set("reporterPhone", contact);
+        if (photo.files[0]) formData.set("photo", photo.files[0]);
 
+        const response = await fetch("config/submit-report.php", {
+            method: "POST",
+            body: formData
+        });
 
-    const report = {
+        if (response.status === 405) {
+            result = await submitReportToSupabase({
+                title,
+                category,
+                priority,
+                description: issueDescription,
+                location,
+                reporter_name: name,
+                reporter_phone: contact
+            }, photo.files[0] || null);
+        } else {
+            const responseBody = await response.text();
+            try {
+                result = JSON.parse(responseBody);
+            } catch (error) {
+                throw new Error(
+                    responseBody.trim()
+                        ? "The server returned an invalid response. Check the PHP error log."
+                        : `The server returned an empty response (HTTP ${response.status}). Check that PHP is running.`
+                );
+            }
+        }
 
-        id: reportId,
+        if ((response.status !== 405 && !response.ok) || !result.success) {
+            throw new Error(result.message || "Unable to submit report.");
+        }
 
-        name: name,
+        generatedReportId.textContent = result.report_id;
+        successModal.classList.add("active");
+        reportForm.reset();
+        charCount.textContent = "0";
+        photoPreview.innerHTML = "";
+        photoPreview.classList.remove("active");
+        selectedPhotoData = "";
+        await updateStatistics();
 
-        contact: contact,
-
-        category: category,
-
-        priority: priority,
-
-        location: location,
-
-        title: title,
-
-        description: issueDescription,
-
-        photo: selectedPhotoData,
-
-        status: "Pending Review",
-
-        date:
-            new Date().toISOString(),
-
-        lastUpdated:
-            new Date().toISOString()
-
-    };
-
-
-    const reports =
-        getReports();
-
-
-    reports.push(report);
-
-
-    saveReports(reports);
-
-
-    updateStatistics();
-
-
-    generatedReportId.textContent =
-        reportId;
-
-
-    successModal.classList.add("active");
-
-
-    reportForm.reset();
-
-    charCount.textContent = "0";
-
-    photoPreview.innerHTML = "";
-
-    photoPreview.classList.remove("active");
-
-    selectedPhotoData = "";
-
-
-    showToast(
-        "Report Submitted",
-        `Your report ID is ${reportId}.`,
-        "success"
-    );
+        showToast(
+            "Report Submitted",
+            `Your report ID is ${result.report_id}.`,
+            "success"
+        );
+    } catch (error) {
+        console.error(error);
+        showToast("Submit failed", error.message || "Please try again.", "error");
+    }
 
 });
 
@@ -589,7 +524,7 @@ copyReportId.addEventListener("click", async () => {
    TRACK REPORT
    ========================================================= */
 
-trackForm.addEventListener("submit", event => {
+trackForm.addEventListener("submit", async event => {
 
     event.preventDefault();
 
@@ -601,88 +536,42 @@ trackForm.addEventListener("submit", event => {
             .toUpperCase();
 
 
-    const reports =
-        getReports();
+    try {
+        const report = await findReportInSupabase(id);
+        if (!report) {
+            trackResult.textContent = "Report not found. Please check your report ID and try again.";
+            trackResult.classList.add("active");
+            return;
+        }
 
-
-    const report =
-        reports.find(
-            item => item.id.toUpperCase() === id
-        );
-
-
-    if (!report) {
+        const formattedDate = new Date(report.lastUpdated || report.date)
+            .toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "long",
+                year: "numeric"
+            });
 
         trackResult.innerHTML = `
-
             <strong>
-                <i class="fa-solid fa-circle-xmark"></i>
-                Report not found
+                <i class="fa-solid fa-circle-check"></i>
+                ${escapeHtml(report.status)}
             </strong>
-
             <br>
-
-            Please check your report ID and try again.
-
+            <span><strong>Report:</strong> ${escapeHtml(report.title || "Community Issue")}</span>
+            <br>
+            <span><strong>Category:</strong> ${escapeHtml(report.category || "Not specified")}</span>
+            <br>
+            <span><strong>Location:</strong> ${escapeHtml(report.location || "Not specified")}</span>
+            <br>
+            <span><strong>Last Updated:</strong> ${formattedDate}</span>
         `;
-
         trackResult.classList.add("active");
-
-        return;
-
+    } catch (error) {
+        console.error("Unable to track report:", error);
+        trackResult.textContent =
+            "Report tracking is temporarily unavailable. Please try again later.";
+        trackResult.classList.add("active");
     }
-
-
-    const formattedDate =
-        new Date(report.lastUpdated)
-            .toLocaleDateString(
-                "en-IN",
-                {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric"
-                }
-            );
-
-
-    trackResult.innerHTML = `
-
-        <strong>
-            <i class="fa-solid fa-circle-check"></i>
-            ${escapeHtml(report.status)}
-        </strong>
-
-        <br>
-
-        <span>
-            <strong>Report:</strong>
-            ${escapeHtml(report.title)}
-        </span>
-
-        <br>
-
-        <span>
-            <strong>Category:</strong>
-            ${escapeHtml(report.category)}
-        </span>
-
-        <br>
-
-        <span>
-            <strong>Location:</strong>
-            ${escapeHtml(report.location)}
-        </span>
-
-        <br>
-
-        <span>
-            <strong>Last Updated:</strong>
-            ${formattedDate}
-        </span>
-
-    `;
-
-    trackResult.classList.add("active");
 
 });
 
@@ -691,61 +580,24 @@ trackForm.addEventListener("submit", event => {
    STATISTICS
    ========================================================= */
 
-function updateStatistics() {
+async function updateStatistics() {
+    try {
+        const response = await fetch("config/report-stats.php", {
+            headers: { "Accept": "application/json" }
+        });
+        const stats = await response.json();
 
-    const reports =
-        getReports();
+        if (!response.ok || !stats.success) {
+            throw new Error(stats.message || "Unable to load report statistics.");
+        }
 
-
-    const total =
-        reports.length;
-
-
-    const underReview =
-        reports.filter(
-            report =>
-                report.status === "Under Review"
-        ).length;
-
-
-    const followups =
-        reports.filter(
-            report =>
-                report.status ===
-                "Follow-up Initiated"
-        ).length;
-
-
-    const closed =
-        reports.filter(
-            report =>
-                ["Completed", "Closed", "Resolved"]
-                    .includes(report.status)
-        ).length;
-
-
-    animateNumber(
-        document.getElementById("reportsCount"),
-        total
-    );
-
-
-    animateNumber(
-        document.getElementById("reviewCount"),
-        underReview
-    );
-
-
-    animateNumber(
-        document.getElementById("followupCount"),
-        followups
-    );
-
-
-    animateNumber(
-        document.getElementById("closedCount"),
-        closed
-    );
+        animateNumber(document.getElementById("reportsCount"), Number(stats.total));
+        animateNumber(document.getElementById("reviewCount"), Number(stats.under_review));
+        animateNumber(document.getElementById("followupCount"), Number(stats.followups));
+        animateNumber(document.getElementById("closedCount"), Number(stats.closed));
+    } catch (error) {
+        console.error("Unable to load report statistics:", error);
+    }
 
 }
 
@@ -939,58 +791,6 @@ revealElements.forEach(element => {
    ========================================================= */
 
 updateStatistics();
-
-
-/* =========================================================
-   DEMO DATA
-   =========================================================
-
-   Uncomment the following function once if you want
-   to test the website with sample reports.
-
-------------------------------------------------------------
-
-function createDemoReport() {
-
-    const reports = getReports();
-
-    reports.push({
-
-        id: "CV-26-0001",
-
-        name: "Demo User",
-
-        contact: "",
-
-        category: "Water & Sanitation",
-
-        priority: "High",
-
-        location: "Ward 12",
-
-        title: "Water supply interruption",
-
-        description:
-            "Water supply has been interrupted in the area.",
-
-        status: "Follow-up Initiated",
-
-        date:
-            new Date().toISOString(),
-
-        lastUpdated:
-            new Date().toISOString()
-
-    });
-
-    saveReports(reports);
-
-    updateStatistics();
-
-}
-
-------------------------------------------------------------
-*/
 
 
 console.log(

@@ -5,35 +5,6 @@
 
 
 /* =========================================================
-   STORAGE
-========================================================= */
-
-const STORAGE_KEY = "communityVoiceReports";
-
-
-function getReports() {
-
-    try {
-
-        return JSON.parse(
-            localStorage.getItem(STORAGE_KEY)
-        ) || [];
-
-    } catch (error) {
-
-        console.error(
-            "Unable to read reports:",
-            error
-        );
-
-        return [];
-
-    }
-
-}
-
-
-/* =========================================================
    ELEMENTS
 ========================================================= */
 
@@ -65,6 +36,7 @@ function isTrackableStatus(status) {
 
     return [
         "Pending Review",
+        "Submitted",
         "Report Submitted",
         "Under Review",
         "Follow-up Initiated",
@@ -643,13 +615,32 @@ function showNotFound() {
 }
 
 
+async function findReport(reportId) {
+
+    return findReportInSupabase(reportId);
+
+}
+
+
+function showTrackingError(error) {
+
+    console.error("Unable to track report:", error);
+    trackResult.textContent =
+        "Report tracking is temporarily unavailable. Please try again later.";
+    trackResult.classList.add("active");
+    reportDetails.classList.remove("active");
+    emptyState.style.display = "none";
+
+}
+
+
 /* =========================================================
    TRACK REPORT
 ========================================================= */
 
 trackForm.addEventListener(
     "submit",
-    event => {
+    async event => {
 
         event.preventDefault();
 
@@ -667,54 +658,33 @@ trackForm.addEventListener(
         }
 
 
-        const reports =
-            getReports();
+        try {
+            const report = await findReport(id);
 
+            if (!report) {
+                showNotFound();
+                return;
+            }
 
-        const report =
-            reports.find(
-                item =>
-                    String(item.id)
-                        .toUpperCase() === id
-            );
+            if (!isTrackableStatus(report.status)) {
+                trackResult.innerHTML = `
+                    <strong>
+                        <i class="fa-solid fa-clock"></i>
+                        Report pending admin review
+                    </strong>
+                    <br>
+                    Your report has been received and is waiting for admin approval before it can be tracked.
+                `;
+                trackResult.classList.add("active");
+                reportDetails.classList.remove("active");
+                emptyState.style.display = "none";
+                return;
+            }
 
-
-        if (!report) {
-
-            showNotFound();
-
-            return;
-
+            displayReport(report);
+        } catch (error) {
+            showTrackingError(error);
         }
-
-
-        if (!isTrackableStatus(report.status)) {
-
-            trackResult.innerHTML = `
-
-                <strong>
-
-                    <i class="fa-solid fa-clock"></i>
-
-                    Report pending admin review
-
-                </strong>
-
-                <br>
-
-                Your report has been received and is waiting for admin approval before it can be tracked.
-
-            `;
-
-            trackResult.classList.add("active");
-            reportDetails.classList.remove("active");
-            emptyState.style.display = "none";
-            return;
-
-        }
-
-
-        displayReport(report);
 
     }
 );
@@ -764,55 +734,21 @@ if (urlReportId) {
             .toUpperCase()
             .trim();
 
-
-    const reports =
-        getReports();
-
-
-    const report =
-        reports.find(
-            item =>
-                String(item.id)
-                    .toUpperCase() ===
-                trackId.value
-        );
-
-
-    if (report) {
-
-        if (!isTrackableStatus(report.status)) {
-
-            trackResult.innerHTML = `
-
-                <strong>
-
-                    <i class="fa-solid fa-clock"></i>
-
-                    Report pending admin review
-
-                </strong>
-
-                <br>
-
-                Your report has been received and is waiting for admin approval before it can be tracked.
-
-            `;
-
-            trackResult.classList.add("active");
-            reportDetails.classList.remove("active");
-            emptyState.style.display = "none";
-
-        } else {
-
-            displayReport(report);
-
-        }
-
-    } else {
-
-        showNotFound();
-
-    }
+    findReport(trackId.value)
+        .then(report => {
+            if (!report) {
+                showNotFound();
+            } else if (isTrackableStatus(report.status)) {
+                displayReport(report);
+            } else {
+                trackResult.textContent =
+                    "Your report has been received and is waiting for admin approval before it can be tracked.";
+                trackResult.classList.add("active");
+                reportDetails.classList.remove("active");
+                emptyState.style.display = "none";
+            }
+        })
+        .catch(showTrackingError);
 
 }
 

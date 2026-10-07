@@ -994,11 +994,11 @@
                                     <div class="upload-content">
 
                                         <strong>
-                                            Add a photo of the issue
+                                            Add a photo or video of the issue
                                         </strong>
 
                                         <span>
-                                            JPG, PNG or WEBP • Maximum 20–30 MB
+                                            JPG, PNG, WEBP, MP4, MOV, WEBM • Maximum 30 MB
                                         </span>
 
                                     </div>
@@ -1011,8 +1011,7 @@
                                 </label>
 
 
-                                <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp"
-                                    hidden>
+                                <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm,video/avi,video/mpeg,video/x-matroska" hidden>
 
 
                                 <div class="photo-preview" id="photoPreview"></div>
@@ -1401,6 +1400,7 @@
      JAVASCRIPT
      ========================================================= -->
 
+    <script src="supabase-browser.js"></script>
     <script src="report.js"></script>
 
 </body>

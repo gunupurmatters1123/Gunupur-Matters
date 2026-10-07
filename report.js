@@ -3,50 +3,6 @@
    REPORT PAGE INTERACTIONS
    ========================================================= */
 
-const STORAGE_KEY = "communityVoiceReports";
-
-function getReports() {
-
-    try {
-
-        return JSON.parse(
-            localStorage.getItem(STORAGE_KEY)
-        ) || [];
-
-    } catch (error) {
-
-        console.error("Unable to read reports:", error);
-
-        return [];
-
-    }
-
-}
-
-
-function saveReports(reports) {
-
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(reports)
-    );
-
-}
-
-
-function generateReportId() {
-
-    const reports = getReports();
-
-    const year = new Date().getFullYear().toString().slice(-2);
-
-    const nextNumber = String(reports.length + 1).padStart(4, "0");
-
-    return `CV-${year}-${nextNumber}`;
-
-}
-
-
 function showToast(title, message) {
 
     const toast = document.getElementById("toast");
@@ -164,38 +120,44 @@ if (photoInput && photoPreview) {
 
             selectedPhotoData = "";
             photoPreview.classList.remove("active");
-
             photoPreview.innerHTML = "";
 
             return;
 
         }
 
-        if (!file.type.startsWith("image/")) {
+        const isImage = file.type.startsWith("image/");
+        const isVideo = file.type.startsWith("video/");
 
-            showToast("Invalid file", "Please choose a JPG, PNG, or WEBP image.");
+        if (!isImage && !isVideo) {
 
+            showToast("Invalid file", "Please choose a JPG, PNG, WEBP, MP4, MOV, or WEBM file.");
             photoInput.value = "";
-
             return;
 
         }
 
-        const reader = new FileReader();
+        if (isImage) {
+            const reader = new FileReader();
 
-        reader.onload = (event) => {
+            reader.onload = (event) => {
+                selectedPhotoData = event.target.result;
+                photoPreview.innerHTML = `<img src="${selectedPhotoData}" alt="Issue preview" />`;
+                photoPreview.classList.add("active");
+            };
 
-            selectedPhotoData = event.target.result;
+            reader.readAsDataURL(file);
+            return;
+        }
 
-            photoPreview.innerHTML = `
-                <img src="${selectedPhotoData}" alt="Issue preview" />
-            `;
-
-            photoPreview.classList.add("active");
-
-        };
-
-        reader.readAsDataURL(file);
+        selectedPhotoData = "";
+        const videoUrl = URL.createObjectURL(file);
+        photoPreview.innerHTML = `
+            <video controls playsinline preload="metadata">
+                <source src="${videoUrl}" type="${file.type}">
+            </video>
+        `;
+        photoPreview.classList.add("active");
 
     });
 
@@ -395,7 +357,7 @@ if (copyReportIdBtn) {
 
 if (reportForm) {
 
-    reportForm.addEventListener("submit", (event) => {
+    reportForm.addEventListener("submit", async (event) => {
 
         event.preventDefault();
 
@@ -445,113 +407,101 @@ if (reportForm) {
 
         }
 
-        const reportId = generateReportId();
+        const formData = new FormData(reportForm);
 
-        const reportData = {
-
-            id: reportId,
-
-            category: document.getElementById("category")?.value || "",
-
-            priority: document.getElementById("priority")?.value || "",
-
-            title: document.getElementById("title")?.value.trim() || "",
-
-            description: document.getElementById("description")?.value.trim() || "",
-
-            wardNumber: document.getElementById("wardNumber")?.value || "",
-
-            street: document.getElementById("street")?.value.trim() || "",
-
-            area: document.getElementById("area")?.value.trim() || "",
-
-            landmark: document.getElementById("landmark")?.value.trim() || "",
-
-            pinCode: document.getElementById("pinCode")?.value.trim() || "",
-
-            latitude: document.getElementById("latitude")?.value || "",
-
-            longitude: document.getElementById("longitude")?.value || "",
-
-            reporterName: document.getElementById("reporterName")?.value.trim() || "",
-
-            reporterPhone: document.getElementById("reporterPhone")?.value.trim() || "",
-
-            name: document.getElementById("reporterName")?.value.trim() || "",
-
-            contact: document.getElementById("reporterPhone")?.value.trim() || "",
-
-            photo: selectedPhotoData,
-
-            location: [
-
-                document.getElementById("area")?.value.trim() || "",
-
-                document.getElementById("street")?.value.trim() || "",
-
-                document.getElementById("wardNumber")?.value ? `Ward ${document.getElementById("wardNumber").value}` : "",
-
-                document.getElementById("pinCode")?.value.trim() || ""
-
-            ]
-                .filter(Boolean)
-                .join(", "),
-
-            date: new Date().toISOString(),
-
-            lastUpdated: new Date().toISOString(),
-
-            submittedAt: new Date().toISOString(),
-
-            status: "Pending Review"
-
-        };
-
-        const reports = getReports();
-
-        reports.unshift(reportData);
-
-        saveReports(reports);
-
-        openModal(reportId);
-
-        reportForm.reset();
-
-        if (charCount) {
-
-            charCount.textContent = "0 / 1000";
-
+        if (photoInput && photoInput.files && photoInput.files[0]) {
+            formData.set("photo", photoInput.files[0]);
         }
 
-        if (photoPreview) {
+        try {
+            const response = await fetch("config/submit-report.php", {
+                method: "POST",
+                body: formData,
+                credentials: "same-origin"
+            });
 
-            photoPreview.classList.remove("active");
+            let result;
 
-            photoPreview.innerHTML = "";
+            if (response.status === 405) {
+                const value = name => String(formData.get(name) || "").trim();
+                const street = value("street");
+                const area = value("area");
+                const ward = value("wardNumber");
+                const pin = value("pinCode");
+                const location = [area, street, ward, pin].filter(Boolean).join(", ");
+                const contact = value("reporterPhone");
 
+                result = await submitReportToSupabase({
+                    title: value("title"),
+                    category: value("category"),
+                    priority: value("priority"),
+                    description: value("description"),
+                    location,
+                    location_details: value("locationDetails"),
+                    ward_number: ward,
+                    street,
+                    area,
+                    landmark: value("landmark"),
+                    pin_code: pin,
+                    latitude: value("latitude"),
+                    longitude: value("longitude"),
+                    reporter_name: value("reporterName"),
+                    reporter_phone: contact,
+                    reporter_email: contact.includes("@") ? contact : ""
+                }, photoInput && photoInput.files ? photoInput.files[0] : null);
+            } else {
+                const responseBody = await response.text();
+                try {
+                    result = JSON.parse(responseBody);
+                } catch (error) {
+                    const responseMessage = responseBody.trim()
+                        ? "The server returned an invalid response. Check the PHP error log."
+                        : `The server returned an empty response (HTTP ${response.status}). Check that PHP is running.`;
+                    throw new Error(responseMessage);
+                }
+            }
+
+            if ((response.status !== 405 && !response.ok) || !result.success) {
+                throw new Error(result.message || "Unable to submit report.");
+            }
+
+            if (!result.report_id) {
+                throw new Error("The server did not return a report ID.");
+            }
+
+            openModal(result.report_id);
+
+            reportForm.reset();
+
+            if (charCount) {
+                charCount.textContent = "0 / 1000";
+            }
+
+            if (photoPreview) {
+                photoPreview.classList.remove("active");
+                photoPreview.innerHTML = "";
+            }
+
+            selectedPhotoData = "";
+
+            if (locationStatus) {
+                locationStatus.textContent = "Location not selected";
+            }
+
+            if (latitudeInput) {
+                latitudeInput.value = "";
+            }
+
+            if (longitudeInput) {
+                longitudeInput.value = "";
+            }
+
+            showToast("Issue logged", "Your report was submitted successfully.");
+
+        } catch (error) {
+            console.error(error);
+            showToast("Submit failed", error.message || "Please try again.");
         }
-
-        selectedPhotoData = "";
-
-        if (locationStatus) {
-
-            locationStatus.textContent = "Location not selected";
-
-        }
-
-        if (latitudeInput) {
-
-            latitudeInput.value = "";
-
-        }
-
-        if (longitudeInput) {
-
-            longitudeInput.value = "";
-
-        }
-
-        showToast("Issue logged", "Your report was submitted successfully.");
 
     });
 

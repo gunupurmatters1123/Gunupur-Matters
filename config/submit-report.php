@@ -1,286 +1,153 @@
 <?php
 
-require_once "../config/database.php";
+require_once __DIR__ . "/supabase.php";
+
+header("Content-Type: application/json");
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-    die("Invalid request.");
+    http_response_code(405);
+    echo json_encode(["success" => false, "message" => "Invalid request method."]);
+    exit;
 }
 
+$report_number = "GM-" . date("Y") . "-" . strtoupper(bin2hex(random_bytes(8)));
 
-/*
-|--------------------------------------------------------------------------
-| Get form values
-|--------------------------------------------------------------------------
-*/
-
-$full_name = trim($_POST["full_name"] ?? "");
-$mobile = trim($_POST["mobile"] ?? "");
-$email = trim($_POST["email"] ?? "");
+$title = trim($_POST["title"] ?? "");
 $category = trim($_POST["category"] ?? "");
-$location = trim($_POST["location"] ?? "");
+$priority = trim($_POST["priority"] ?? "Medium");
 $description = trim($_POST["description"] ?? "");
-
-
-/*
-|--------------------------------------------------------------------------
-| Basic validation
-|--------------------------------------------------------------------------
-*/
+$street = trim($_POST["street"] ?? "");
+$area = trim($_POST["area"] ?? "");
+$landmark = trim($_POST["landmark"] ?? "");
+$location_details = trim($_POST["locationDetails"] ?? "");
+$ward_number = trim($_POST["wardNumber"] ?? "");
+$pin_code = trim($_POST["pinCode"] ?? "");
+$latitude = trim($_POST["latitude"] ?? "");
+$longitude = trim($_POST["longitude"] ?? "");
+$reporter_name = trim($_POST["reporterName"] ?? "");
+$reporter_phone = trim($_POST["reporterPhone"] ?? "");
+$reporter_email = trim($_POST["reporterEmail"] ?? $_POST["email"] ?? "");
+$location = trim($_POST["location"] ?? "");
 
 if ($category === "") {
-    die("Please select an issue category.");
+    http_response_code(400);
+    echo json_encode(["success" => false, "message" => "Please select an issue category."]);
+    exit;
 }
 
-if ($location === "") {
-    die("Please enter the location.");
+if ($location === "" && ($street === "" || $area === "")) {
+    http_response_code(400);
+    echo json_encode(["success" => false, "message" => "Please provide the street and area."]);
+    exit;
 }
 
 if ($description === "") {
-    die("Please describe the issue.");
+    http_response_code(400);
+    echo json_encode(["success" => false, "message" => "Please describe the issue."]);
+    exit;
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| Generate report number
-|--------------------------------------------------------------------------
-*/
-
-$report_number = "GM-" . date("Y") . "-" . strtoupper(
-    substr(bin2hex(random_bytes(4)), 0, 8)
-);
-
-
-/*
-|--------------------------------------------------------------------------
-| File upload
-|--------------------------------------------------------------------------
-*/
+if ($location === "") {
+    $locationParts = array_filter([
+        $area,
+        $street,
+        $ward_number !== "" ? "Ward " . $ward_number : "",
+        $pin_code
+    ]);
+    $location = implode(", ", $locationParts);
+}
 
 $file_name = null;
 $file_path = null;
+$media_type = null;
 
-$uploaded_file = $_FILES["photo"] ?? $_FILES["attachment"] ?? null;
+$uploaded_file = $_FILES["photo"] ?? null;
 
 if (is_array($uploaded_file) && ($uploaded_file["error"] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
-
-    if ($uploaded_file["error"] !== UPLOAD_ERR_OK) {
-        die("File upload failed.");
+    if (($uploaded_file["error"] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "message" => "The uploaded file failed to process."]);
+        exit;
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Maximum 5 MB
-    |--------------------------------------------------------------------------
-    */
-
-    $max_size = 5 * 1024 * 1024;
-
-    if ($uploaded_file["size"] > $max_size) {
-        die("File is too large. Maximum size is 5 MB.");
+    $max_size = 30 * 1024 * 1024;
+    if (($uploaded_file["size"] ?? 0) > $max_size) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "message" => "File is too large. Maximum size is 30 MB."]);
+        exit;
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Allowed extensions
-    |--------------------------------------------------------------------------
-    */
 
     $allowed_extensions = [
-        "jpg",
-        "jpeg",
-        "png",
-        "webp",
-        "pdf"
+        "jpg", "jpeg", "png", "webp", "gif",
+        "mp4", "mov", "avi", "mkv", "webm", "mpeg", "mpg"
     ];
 
-    $original_name = $uploaded_file["name"];
-
-    $extension = strtolower(
-        pathinfo($original_name, PATHINFO_EXTENSION)
-    );
-
+    $extension = strtolower(pathinfo($uploaded_file["name"], PATHINFO_EXTENSION));
     if (!in_array($extension, $allowed_extensions, true)) {
-        die("This file type is not allowed.");
+        http_response_code(400);
+        echo json_encode(["success" => false, "message" => "This file type is not allowed."]);
+        exit;
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Create upload folder
-    |--------------------------------------------------------------------------
-    */
-
-    $upload_directory = "../uploads/reports/";
-
+    $upload_directory = __DIR__ . "/../uploads/reports/";
     if (!is_dir($upload_directory)) {
-
-        mkdir(
-            $upload_directory,
-            0755,
-            true
-        );
-
+        mkdir($upload_directory, 0755, true);
     }
 
+    $safe_filename = $report_number . "_" . bin2hex(random_bytes(8)) . "." . $extension;
+    $destination = $upload_directory . $safe_filename;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Generate safe filename
-    |--------------------------------------------------------------------------
-    */
-
-    $safe_filename =
-        $report_number . "_" .
-        bin2hex(random_bytes(8)) .
-        "." .
-        $extension;
-
-
-    $destination =
-        $upload_directory .
-        $safe_filename;
-
-
-    if (!move_uploaded_file(
-        $uploaded_file["tmp_name"],
-        $destination
-    )) {
-
-        die("Unable to save uploaded file.");
-
+    if (!move_uploaded_file($uploaded_file["tmp_name"], $destination)) {
+        http_response_code(500);
+        echo json_encode(["success" => false, "message" => "Unable to save uploaded file."]);
+        exit;
     }
 
-
-    $file_name = $original_name;
-
-    $file_path =
-        "uploads/reports/" .
-        $safe_filename;
+    $file_name = $uploaded_file["name"];
+    $file_path = "uploads/reports/" . $safe_filename;
+    $media_type = str_starts_with($uploaded_file["type"] ?? "", "video/") ? "video" : "image";
 }
 
+try {
+    supabaseRequest("POST", "reports", [], [
+        "report_number" => $report_number,
+        "title" => $title !== "" ? $title : null,
+        "category" => $category,
+        "priority" => $priority !== "" ? $priority : "Medium",
+        "description" => $description,
+        "location" => $location !== "" ? $location : null,
+        "location_details" => $location_details !== "" ? $location_details : null,
+        "ward_number" => $ward_number !== "" ? $ward_number : null,
+        "street" => $street !== "" ? $street : null,
+        "area" => $area !== "" ? $area : null,
+        "landmark" => $landmark !== "" ? $landmark : null,
+        "pin_code" => $pin_code !== "" ? $pin_code : null,
+        "latitude" => $latitude !== "" ? $latitude : null,
+        "longitude" => $longitude !== "" ? $longitude : null,
+        "reporter_name" => $reporter_name !== "" ? $reporter_name : null,
+        "reporter_phone" => $reporter_phone !== "" ? $reporter_phone : null,
+        "reporter_email" => $reporter_email !== "" ? $reporter_email : null,
+        "file_name" => $file_name,
+        "file_path" => $file_path,
+        "media_type" => $media_type,
+        "status" => "Under Review",
+    ]);
+} catch (Throwable $error) {
+    if ($file_path !== null) {
+        $savedFile = __DIR__ . "/../" . $file_path;
+        if (is_file($savedFile)) {
+            unlink($savedFile);
+        }
+    }
+    error_log("Supabase report submission failed: " . $error->getMessage());
+    http_response_code(503);
+    echo json_encode(["success" => false, "message" => "Unable to save your report right now. Please try again later."]);
+    exit;
+}
 
-/*
-|--------------------------------------------------------------------------
-| Insert into database
-|--------------------------------------------------------------------------
-*/
-
-$sql = "
-    INSERT INTO reports
-    (
-        report_number,
-        full_name,
-        mobile,
-        email,
-        category,
-        location,
-        description,
-        file_name,
-        file_path,
-        status
-    )
-    VALUES
-    (
-        :report_number,
-        :full_name,
-        :mobile,
-        :email,
-        :category,
-        :location,
-        :description,
-        :file_name,
-        :file_path,
-        'Submitted'
-    )
-";
-
-
-$stmt = $pdo->prepare($sql);
-
-$stmt->execute([
-
-    ":report_number" => $report_number,
-
-    ":full_name" =>
-        $full_name !== "" ? $full_name : null,
-
-    ":mobile" =>
-        $mobile !== "" ? $mobile : null,
-
-    ":email" =>
-        $email !== "" ? $email : null,
-
-    ":category" => $category,
-
-    ":location" => $location,
-
-    ":description" => $description,
-
-    ":file_name" => $file_name,
-
-    ":file_path" => $file_path
-
+echo json_encode([
+    "success" => true,
+    "message" => "Report submitted successfully.",
+    "report_id" => $report_number,
+    "report_number" => $report_number
 ]);
-
-
-/*
-|--------------------------------------------------------------------------
-| Success
-|--------------------------------------------------------------------------
-*/
-
-?>
-
-<!DOCTYPE html>
-
-<html lang="en">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Report Submitted | Gunupur Matters</title>
-
-</head>
-
-<body>
-
-    <h1>Report Submitted Successfully</h1>
-
-    <p>
-        Your report has been received.
-    </p>
-
-    <h2>
-        Report Number:
-        <?php echo htmlspecialchars($report_number); ?>
-    </h2>
-
-    <p>
-        Please save this report number.
-        You will need it to track your report.
-    </p>
-
-    <p>
-        <a href="../track.html">
-            Track Your Report
-        </a>
-    </p>
-
-    <p>
-        <a href="../index.html">
-            Return to Home
-        </a>
-    </p>
-
-</body>
-
-</html>

@@ -148,24 +148,13 @@ async function submitReportToSupabase(report, file = null) {
     return { success: true, report_id: reportNumber, report_number: reportNumber };
 }
 
-async function sendReportTrackingCode(reportNumber) {
-    const response = await supabaseFetch("/functions/v1/report-tracking-otp", {
+async function findReportInSupabase(reportNumber) {
+    const response = await supabaseFetch("/rest/v1/rpc/track_report", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ action: "send", reportId: reportNumber })
-    });
-    return response.json();
-}
-
-async function verifyReportTrackingCode(reportNumber, code) {
-    const response = await supabaseFetch("/functions/v1/report-tracking-otp", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ action: "verify", reportId: reportNumber, code })
+        body: JSON.stringify({ p_report_number: reportNumber })
     });
     return response.json();
 }

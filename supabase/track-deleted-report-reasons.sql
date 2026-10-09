@@ -6,10 +6,8 @@ alter table public.reports add column if not exists archive_reason text;
 create table if not exists public.deleted_report_tracking (
     report_number text primary key,
     deletion_reason text not null,
-    reporter_phone text,
     deleted_at timestamptz not null default now()
 );
-alter table public.deleted_report_tracking add column if not exists reporter_phone text;
 
 alter table public.deleted_report_tracking enable row level security;
 revoke all privileges on table public.deleted_report_tracking from public, anon, authenticated;
@@ -69,18 +67,16 @@ begin
     end if;
 
     insert into public.deleted_report_tracking (
-        report_number, deletion_reason, reporter_phone, deleted_at
+        report_number, deletion_reason, deleted_at
     )
     select
         report_number,
         coalesce(nullif(btrim(archive_reason), ''), 'No reason was recorded.'),
-        reporter_phone,
         now()
     from public.reports
     where report_number = p_report_number and status = 'Archived'
     on conflict (report_number) do update
     set deletion_reason = excluded.deletion_reason,
-        reporter_phone = excluded.reporter_phone,
         deleted_at = excluded.deleted_at;
 
     delete from public.reports
@@ -148,7 +144,6 @@ as $$
 $$;
 
 revoke all on function public.track_report(text) from public;
-revoke all on function public.track_report(text) from anon, authenticated;
-grant execute on function public.track_report(text) to service_role;
+grant execute on function public.track_report(text) to anon, authenticated;
 
 notify pgrst, 'reload schema';

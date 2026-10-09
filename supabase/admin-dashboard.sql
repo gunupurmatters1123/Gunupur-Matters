@@ -29,10 +29,8 @@ grant all privileges on table public.report_attachments to service_role;
 create table if not exists public.deleted_report_tracking (
     report_number text primary key,
     deletion_reason text not null,
-    reporter_phone text,
     deleted_at timestamptz not null default now()
 );
-alter table public.deleted_report_tracking add column if not exists reporter_phone text;
 
 alter table public.deleted_report_tracking enable row level security;
 revoke all privileges on table public.deleted_report_tracking from public, anon, authenticated;
@@ -426,18 +424,16 @@ begin
     end if;
 
     insert into public.deleted_report_tracking (
-        report_number, deletion_reason, reporter_phone, deleted_at
+        report_number, deletion_reason, deleted_at
     )
     select
         report_number,
         coalesce(nullif(btrim(archive_reason), ''), 'No reason was recorded.'),
-        reporter_phone,
         now()
     from public.reports
     where report_number = p_report_number and status = 'Archived'
     on conflict (report_number) do update
     set deletion_reason = excluded.deletion_reason,
-        reporter_phone = excluded.reporter_phone,
         deleted_at = excluded.deleted_at;
 
     delete from public.reports

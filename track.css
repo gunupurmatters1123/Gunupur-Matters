@@ -741,43 +741,6 @@ input {
 
 }
 
-.track-button:disabled {
-
-    cursor: wait;
-
-    opacity: 0.7;
-
-}
-
-
-.tracking-verification {
-
-    margin-top: 20px;
-
-    display: grid;
-
-    grid-template-columns: minmax(0, 1fr) auto;
-
-    gap: 10px 12px;
-
-    align-items: end;
-
-}
-
-
-.tracking-verification .section-label {
-
-    grid-column: 1 / -1;
-
-}
-
-
-.tracking-verification .track-button {
-
-    min-height: 52px;
-
-}
-
 
 .search-help {
 
@@ -1957,13 +1920,6 @@ input {
     .track-form {
 
         display: block;
-
-    }
-
-
-    .tracking-verification {
-
-        grid-template-columns: 1fr;
 
     }
 

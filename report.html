@@ -503,15 +503,11 @@
 
                                         <select id="priority" name="priority" required>
 
-                                            <option value="">
-                                                Select priority
-                                            </option>
-
                                             <option value="Low">
                                                 Low
                                             </option>
 
-                                            <option value="Medium">
+                                            <option value="Medium" selected>
                                                 Medium
                                             </option>
 
@@ -532,26 +528,6 @@
                                 </div>
 
                             </div>
-
-
-                            <!-- ISSUE TITLE -->
-
-                            <div class="form-group">
-
-                                <label for="title">
-
-                                    Issue Title
-
-                                    <span>*</span>
-
-                                </label>
-
-
-                                <input type="text" id="title" name="title" placeholder="Briefly describe the problem"
-                                    maxlength="120" required>
-
-                            </div>
-
 
                             <!-- DESCRIPTION -->
 
@@ -576,11 +552,11 @@
 
                                 <textarea id="description" name="description" rows="7" maxlength="1000"
                                     placeholder="What is the problem? Where is it happening? How long has it been happening? Add any useful details..."
-                                    required></textarea>
+                                    minlength="15" required></textarea>
 
 
                                 <small>
-                                    Minimum 15 characters.
+                                    A short sentence is enough. Minimum 15 characters.
                                 </small>
 
                             </div>
@@ -610,15 +586,14 @@
                                     </h3>
 
                                     <p>
-                                        Provide the exact location of the issue.
+                                        Provide the ward number and street or road where the issue is located.
                                     </p>
 
                                 </div>
 
                             </div>
 
-
-                            <!-- WARD + PIN CODE -->
+                            <!-- WARD NUMBER -->
 
                             <div class="form-grid two-columns">
 
@@ -735,37 +710,11 @@
 
 
 
-                                <!-- PIN CODE -->
-
-                                <div class="form-group">
-
-                                    <label for="pinCode">
-
-                                        PIN Code
-
-                                        <span class="optional">
-                                            Optional
-                                        </span>
-
-                                    </label>
-
-
-                                    <div class="input-icon">
-
-                                        <i class="fa-solid fa-map-pin"></i>
-
-                                        <input type="text" id="pinCode" name="pinCode" placeholder="e.g. 765022"
-                                            maxlength="6" inputmode="numeric" pattern="[0-9]{6}">
-
-                                    </div>
-
-                                </div>
-
                             </div>
 
 
 
-                            <!-- STREET + AREA -->
+                            <!-- STREET / ROAD -->
 
                             <div class="form-grid two-columns">
 
@@ -796,78 +745,17 @@
 
 
 
-                                <!-- AREA / LOCALITY -->
-
-                                <div class="form-group">
-
-                                    <label for="area">
-
-                                        Area / Locality
-
-                                        <span>*</span>
-
-                                    </label>
-
-
-                                    <div class="input-icon">
-
-                                        <i class="fa-solid fa-city"></i>
-
-                                        <input type="text" id="area" name="area" placeholder="Enter area or locality"
-                                            maxlength="150" required>
-
-                                    </div>
-
-                                </div>
-
                             </div>
 
 
 
-                            <!-- LANDMARK -->
-
-                            <div class="form-group">
-
-                                <label for="landmark">
-
-                                    Landmark
-
-                                    <span class="optional">
-                                        Optional
-                                    </span>
-
-                                </label>
-
-
-                                <div class="input-icon">
-
-                                    <i class="fa-solid fa-landmark"></i>
-
-                                    <input type="text" id="landmark" name="landmark"
-                                        placeholder="e.g. Near bus stand, school, market, temple..." maxlength="180">
-
-                                </div>
-
-
-                                <small>
-                                    A nearby landmark can help identify the exact location.
-                                </small>
-
-                            </div>
-
-
-
-                            <!-- FULL LOCATION / ADDITIONAL DETAILS -->
+                            <!-- ADDITIONAL LOCATION DETAILS -->
 
                             <div class="form-group">
 
                                 <label for="locationDetails">
 
                                     Additional Location Details
-
-                                    <span class="optional">
-                                        Optional
-                                    </span>
 
                                 </label>
 
@@ -882,8 +770,6 @@
                                 </div>
 
                             </div>
-
-
 
                             <!-- GPS LOCATION -->
 
@@ -1011,7 +897,7 @@
                                 </label>
 
 
-                                <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm,video/avi,video/mpeg,video/x-matroska" hidden>
+                                <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/x-msvideo,video/mpeg,video/x-matroska" hidden>
 
 
                                 <div class="photo-preview" id="photoPreview"></div>

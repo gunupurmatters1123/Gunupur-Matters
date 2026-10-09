@@ -361,50 +361,16 @@ if (reportForm) {
 
         event.preventDefault();
 
-        const requiredFields = reportForm.querySelectorAll("[required]");
-
-        let formIsValid = true;
-
-        requiredFields.forEach((field) => {
-
-            if (!field.value.trim()) {
-
-                formIsValid = false;
-
-                field.focus();
-
-                if (typeof field.reportValidity === "function") {
-
-                    field.reportValidity();
-
-                }
-
-                return;
-
-            }
-
-            if (field.id === "description" && field.value.trim().length < 15) {
-
-                formIsValid = false;
-
-                field.focus();
-
-                field.setCustomValidity("Description must be at least 15 characters long.");
-
-                field.reportValidity();
-
-                field.setCustomValidity("");
-
-            }
-
-        });
-
-        if (!formIsValid) {
-
-            showToast("Missing details", "Please complete all required fields before submitting.");
-
+        const descriptionText = description.value.trim();
+        if (descriptionText.length < 15) {
+            description.focus();
+            showToast("A little more detail needed", "Please describe the issue in at least 15 characters.");
             return;
+        }
 
+        if (!reportForm.reportValidity()) {
+            showToast("Missing details", "Please provide the category, ward number, street, and issue description.");
+            return;
         }
 
         const formData = new FormData(reportForm);
@@ -414,60 +380,26 @@ if (reportForm) {
         }
 
         try {
-            const response = await fetch("config/submit-report.php", {
-                method: "POST",
-                body: formData,
-                credentials: "same-origin"
-            });
-
-            let result;
-
-            if (response.status === 405) {
-                const value = name => String(formData.get(name) || "").trim();
-                const street = value("street");
-                const area = value("area");
-                const ward = value("wardNumber");
-                const pin = value("pinCode");
-                const location = [area, street, ward, pin].filter(Boolean).join(", ");
-                const contact = value("reporterPhone");
-
-                result = await submitReportToSupabase({
-                    title: value("title"),
-                    category: value("category"),
-                    priority: value("priority"),
-                    description: value("description"),
-                    location,
-                    location_details: value("locationDetails"),
-                    ward_number: ward,
-                    street,
-                    area,
-                    landmark: value("landmark"),
-                    pin_code: pin,
-                    latitude: value("latitude"),
-                    longitude: value("longitude"),
-                    reporter_name: value("reporterName"),
-                    reporter_phone: contact,
-                    reporter_email: contact.includes("@") ? contact : ""
-                }, photoInput && photoInput.files ? photoInput.files[0] : null);
-            } else {
-                const responseBody = await response.text();
-                try {
-                    result = JSON.parse(responseBody);
-                } catch (error) {
-                    const responseMessage = responseBody.trim()
-                        ? "The server returned an invalid response. Check the PHP error log."
-                        : `The server returned an empty response (HTTP ${response.status}). Check that PHP is running.`;
-                    throw new Error(responseMessage);
-                }
-            }
-
-            if ((response.status !== 405 && !response.ok) || !result.success) {
-                throw new Error(result.message || "Unable to submit report.");
-            }
-
-            if (!result.report_id) {
-                throw new Error("The server did not return a report ID.");
-            }
+            const value = name => String(formData.get(name) || "").trim();
+            const contact = value("reporterPhone");
+            const wardNumber = value("wardNumber");
+            const street = value("street");
+            const result = await submitReportToSupabase({
+                title: value("title"),
+                category: value("category"),
+                priority: value("priority"),
+                description: value("description"),
+                location: [street, wardNumber].filter(Boolean).join(", "),
+                require_address: true,
+                location_details: value("locationDetails"),
+                ward_number: wardNumber,
+                street,
+                latitude: value("latitude"),
+                longitude: value("longitude"),
+                reporter_name: value("reporterName"),
+                reporter_phone: contact,
+                reporter_email: value("reporterEmail") || (contact.includes("@") ? contact : "")
+            }, photoInput && photoInput.files ? photoInput.files[0] : null);
 
             openModal(result.report_id);
 

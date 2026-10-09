@@ -813,17 +813,13 @@
 
                         <label for="priority">
                             Priority
-                            <b>*</b>
+                            <span>Optional</span>
                         </label>
 
-                        <select id="priority" required>
-
-                            <option value="">
-                                Select priority
-                            </option>
+                        <select id="priority">
 
                             <option value="Low">Low</option>
-                            <option value="Medium">Medium</option>
+                            <option value="Medium" selected>Medium</option>
                             <option value="High">High</option>
 
                         </select>
@@ -860,14 +856,13 @@
 
                     <label for="title">
                         Issue Title
-                        <b>*</b>
+                        <span>Optional</span>
                     </label>
 
                     <input
                         type="text"
                         id="title"
                         placeholder="Briefly describe the problem"
-                        required
                     >
 
                 </div>
@@ -883,6 +878,8 @@
                     <textarea
                         id="description"
                         rows="5"
+                        maxlength="1000"
+                        minlength="15"
                         placeholder="Please provide clear details about what is happening..."
                         required
                     ></textarea>

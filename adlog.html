@@ -483,17 +483,17 @@
                 </div>
 
                 <h2>Welcome back</h2>
-                <p>Use your admin credentials to access the dashboard and update report status.</p>
+                <p>Sign in with your administrator account to review reports stored in Supabase.</p>
 
                 <div class="notice" id="loginNotice">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     <span id="noticeText">Invalid login.</span>
                 </div>
 
-                <form class="login-form" method="post" action="auth.php">
+                <form class="login-form" id="adminLoginForm">
                     <div class="field">
                         <i class="fa-solid fa-user"></i>
-                        <input type="text" id="username" name="username" placeholder="Username" required autocomplete="username">
+                        <input type="email" id="email" name="email" placeholder="Admin email" required autocomplete="email">
                     </div>
 
                     <div class="field password-field">
@@ -504,38 +504,45 @@
                         </button>
                     </div>
 
-                    <div class="row">
-                        <label class="remember">
-                            <input type="checkbox" name="remember" value="1">
-                            <span>Remember me</span>
-                        </label>
-                    </div>
-
                     <button type="submit" class="submit-btn">
                         <i class="fa-solid fa-right-to-bracket"></i>
                         Access dashboard
                     </button>
                 </form>
 
-                <div class="demo-box">
-                    <strong>Demo admin:</strong> username: admin<br>
-                    password: admin123
-                </div>
-
                 <div class="footer-note">Protected admin console for Gunupur Matters</div>
             </div>
         </div>
     </div>
 
+    <script src="supabase-browser.js"></script>
     <script>
         const notice = document.getElementById('loginNotice');
         const noticeText = document.getElementById('noticeText');
-        const urlParams = new URLSearchParams(window.location.search);
+        const loginForm = document.getElementById('adminLoginForm');
+        const submitButton = loginForm.querySelector('button[type="submit"]');
 
-        if (urlParams.get('error') === '1') {
+        if (new URLSearchParams(window.location.search).has('reason')) {
             notice.classList.add('show');
-            noticeText.textContent = 'Incorrect username or password. Please try again.';
+            noticeText.textContent = 'Please sign in with an authorized administrator account.';
         }
+
+        loginForm.addEventListener('submit', async event => {
+            event.preventDefault();
+            notice.classList.remove('show');
+            submitButton.disabled = true;
+            try {
+                await signInAdminWithSupabase(
+                    document.getElementById('email').value.trim(),
+                    document.getElementById('password').value
+                );
+                window.location.replace('admin.html');
+            } catch (error) {
+                noticeText.textContent = error.message || 'Unable to sign in.';
+                notice.classList.add('show');
+                submitButton.disabled = false;
+            }
+        });
 
         function togglePassword() {
             const passwordInput = document.getElementById('password');

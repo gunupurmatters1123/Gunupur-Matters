@@ -1373,6 +1373,32 @@ a {
 
 }
 
+.optional-location-details {
+
+    margin: 8px 0 18px;
+
+}
+
+.optional-location-details summary {
+
+    width: fit-content;
+
+    color: var(--primary);
+
+    cursor: pointer;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+}
+
+.optional-location-details[open] summary {
+
+    margin-bottom: 18px;
+
+}
+
 
 .textarea-icon {
 

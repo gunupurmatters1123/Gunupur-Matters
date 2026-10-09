@@ -2,8 +2,7 @@
    GUNUPUR MATTERS
    ADMIN DASHBOARD JAVASCRIPT
 
-   Reports are loaded and updated through authenticated PHP endpoints,
-   which store report data in Supabase.
+   Reports are loaded and updated through role-checked Supabase functions.
 ========================================================= */
 
 
@@ -15,11 +14,7 @@ const ADMIN_CONFIG = {
 
     USE_API: true,
 
-    REPORTS_ENDPOINT: "config/admin-reports.php",
-
     STORAGE_KEY: "communityVoiceReports",
-
-    ARCHIVE_STORAGE_KEY: "communityVoiceReportsArchive",
 
     REPORTS_PER_PAGE: 8
 
@@ -142,13 +137,8 @@ const toastClose =
 
 
 /*
-    This function is the main entry point for obtaining reports.
-
-    Today:
-        localStorage
-
-    Future:
-        PHP + MySQL API
+    The production dashboard uses admin-gated Supabase RPCs.
+    Local storage remains available only for development mode.
 */
 
 async function getReports() {
@@ -208,157 +198,49 @@ function getReportsFromLocalStorage() {
 }
 
 
-function getArchivedReportsFromLocalStorage() {
-
+async function restoreArchivedReport(reportId) {
     try {
-
-        const stored =
-            safeGetStorageItem(
-                ADMIN_CONFIG.ARCHIVE_STORAGE_KEY
-            );
-
-        if (!stored) {
-
-            return [];
-
+        if (await restoreAdminReportInSupabase(reportId) !== true) {
+            throw new Error("The archived report was not found.");
         }
-
-        const data =
-            JSON.parse(stored);
-
-        if (!Array.isArray(data)) {
-
-            return [];
-
-        }
-
-        return data;
-
+        showToast(
+            "Report Restored",
+            `Report ${reportId} has been restored to the active list.`,
+            "success"
+        );
+        await loadDashboard();
     } catch (error) {
-
-        console.error(
-            "Could not read archived reports:",
-            error
-        );
-
-        return [];
-
+        console.error("Report restore failed:", error);
+        showToast("Restore Failed", error.message || "Unable to restore the report.", "error");
     }
-
 }
 
 
-function archiveReport(report, reason = "") {
-
-    if (!report || !report.id) {
-
-        return;
-
+async function permanentlyDeleteArchivedReport(reportId) {
+    try {
+        const archivedReports = await getArchivedReportsFromSupabase();
+        const report = archivedReports.find(item => String(item.id) === String(reportId));
+        if (!report) {
+            throw new Error("The archived report was not found.");
+        }
+        await removeArchivedReportFilesFromSupabase(report.attachments || []);
+        if (await permanentlyDeleteAdminReportInSupabase(reportId) !== true) {
+            throw new Error("The archived report was not found.");
+        }
+        showToast(
+            "Archived Report Deleted",
+            `${reportId} and its uploaded files have been permanently removed.`,
+            "success"
+        );
+        await loadDashboard();
+    } catch (error) {
+        console.error("Permanent report deletion failed:", error);
+        showToast("Delete Failed", error.message || "Unable to delete the archived report.", "error");
     }
-
-    const archivedReports =
-        getArchivedReportsFromLocalStorage();
-
-    const archivedEntry = {
-        ...report,
-        archivedAt: new Date().toISOString(),
-        archivedFrom: "admin-delete",
-        deleteReason: reason || "No reason provided"
-    };
-
-    archivedReports.unshift(
-        archivedEntry
-    );
-
-    safeSetStorageItem(
-        ADMIN_CONFIG.ARCHIVE_STORAGE_KEY,
-        JSON.stringify(archivedReports)
-    );
-
 }
 
 
-function restoreArchivedReport(reportId) {
-
-    const archivedReports =
-        getArchivedReportsFromLocalStorage();
-
-    const reportToRestore =
-        archivedReports.find(
-            report =>
-                String(report.id) ===
-                String(reportId)
-        );
-
-    if (!reportToRestore) {
-
-        return;
-
-    }
-
-    const activeReports =
-        getReportsFromLocalStorage();
-
-    activeReports.unshift(reportToRestore);
-
-    safeSetStorageItem(
-        ADMIN_CONFIG.STORAGE_KEY,
-        JSON.stringify(activeReports)
-    );
-
-    const remainingArchived =
-        archivedReports.filter(
-            report =>
-                String(report.id) !==
-                String(reportId)
-        );
-
-    safeSetStorageItem(
-        ADMIN_CONFIG.ARCHIVE_STORAGE_KEY,
-        JSON.stringify(remainingArchived)
-    );
-
-    renderArchive();
-    loadDashboard();
-
-    showToast(
-        "Report Restored",
-        `Report ${reportId} has been restored to the active list.`,
-        "success"
-    );
-
-}
-
-
-function permanentlyDeleteArchivedReport(reportId) {
-
-    const archivedReports =
-        getArchivedReportsFromLocalStorage();
-
-    const remainingArchived =
-        archivedReports.filter(
-            report =>
-                String(report.id) !==
-                String(reportId)
-        );
-
-    safeSetStorageItem(
-        ADMIN_CONFIG.ARCHIVE_STORAGE_KEY,
-        JSON.stringify(remainingArchived)
-    );
-
-    renderArchive();
-
-    showToast(
-        "Archived Report Deleted",
-        `The archive copy of ${reportId} has been permanently removed.`,
-        "success"
-    );
-
-}
-
-
-function renderArchive() {
+async function renderArchive() {
 
     const archiveList =
         document.getElementById(
@@ -376,8 +258,19 @@ function renderArchive() {
 
     }
 
-    const archivedReports =
-        getArchivedReportsFromLocalStorage();
+    let archivedReports;
+    try {
+        archivedReports = await getArchivedReportsFromSupabase();
+        if (!Array.isArray(archivedReports)) {
+            throw new Error("Supabase returned invalid archive data.");
+        }
+    } catch (error) {
+        console.error("Could not load archived reports:", error);
+        archiveList.replaceChildren();
+        archiveEmpty.classList.remove("hidden");
+        showToast("Archive Unavailable", error.message || "Unable to load archived reports.", "error");
+        return;
+    }
 
     archiveList.innerHTML = "";
 
@@ -474,14 +367,14 @@ function renderArchive() {
 
             restoreButton.addEventListener(
                 "click",
-                () => {
+                async () => {
 
                     const id =
                         restoreButton.dataset.archiveId;
 
                     if (id) {
 
-                        restoreArchivedReport(id);
+                        await restoreArchivedReport(id);
 
                     }
 
@@ -490,7 +383,7 @@ function renderArchive() {
 
             deleteButton.addEventListener(
                 "click",
-                () => {
+                async () => {
 
                     const id =
                         deleteButton.dataset.archiveId;
@@ -504,7 +397,7 @@ function renderArchive() {
 
                         if (confirmed) {
 
-                            permanentlyDeleteArchivedReport(id);
+                            await permanentlyDeleteArchivedReport(id);
 
                         }
 
@@ -521,44 +414,17 @@ function renderArchive() {
 
 
 /* =========================================================
-   PHP API
+   SUPABASE API
 ========================================================= */
 
 async function getReportsFromAPI() {
 
     try {
-
-        const response =
-            await fetch(
-                ADMIN_CONFIG.REPORTS_ENDPOINT,
-                {
-                    method: "GET",
-
-                    headers: {
-                        "Accept":
-                            "application/json"
-                    },
-
-                    credentials: "include"
-
-                }
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Unable to load reports."
-            );
-
+        const data = await getAdminReportsFromSupabase();
+        if (!Array.isArray(data)) {
+            throw new Error("Supabase returned invalid report data.");
         }
-
-
-        const data =
-            await response.json();
-
-
-        return data.reports || [];
+        return data;
 
     } catch (error) {
 
@@ -566,7 +432,7 @@ async function getReportsFromAPI() {
 
         showToast(
             "Unable to load reports",
-            "The server could not provide report data.",
+            error.message || "Supabase could not provide report data.",
             "error"
         );
 
@@ -600,51 +466,10 @@ async function updateReportOnServer(
 
     try {
 
-        const response =
-            await fetch(
-                ADMIN_CONFIG.REPORTS_ENDPOINT,
-                {
-
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-
-                        "Accept":
-                            "application/json"
-                    },
-
-                    credentials: "include",
-
-                    body: JSON.stringify({
-
-                        report_id: reportId,
-
-                        status: status,
-
-                        note: note
-
-                    })
-
-                }
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if (!response.ok || !data.success) {
-
-            throw new Error(
-                data.message ||
-                "Update failed."
-            );
-
+        const updated = await updateAdminReportInSupabase(reportId, status, note);
+        if (updated !== true) {
+            throw new Error("Report was not found or could not be updated.");
         }
-
-
         return true;
 
     } catch (error) {
@@ -763,17 +588,28 @@ document.addEventListener(
     "DOMContentLoaded",
     async () => {
 
-        await loadDashboard();
+        try {
+            const { user } = await getAdminSession();
+            const adminIdentity = document.querySelector(".user-info strong");
+            if (adminIdentity) {
+                adminIdentity.textContent = user.email || "Administrator";
+            }
+            await loadDashboard();
 
-        setupNavigation();
+            setupNavigation();
 
-        setupFilters();
+            setupFilters();
 
-        setupSidebar();
+            setupSidebar();
 
-        setupDrawer();
+            setupDrawer();
 
-        setupButtons();
+            setupButtons();
+            document.body.classList.remove("admin-auth-pending");
+        } catch (error) {
+            console.error("Admin authentication failed:", error);
+            window.location.replace("adlog.html?reason=login");
+        }
 
     }
 );
@@ -1840,38 +1676,9 @@ async function deleteSelectedReport() {
     }
 
     try {
-
-        const localReports = getReportsFromLocalStorage();
-
-        const reportToArchive = localReports.find(
-            report => String(report.id) === String(selectedReportId)
-        );
-
-        if (reportToArchive) {
-
-            archiveReport(reportToArchive, deleteReason);
-
+        if (await archiveAdminReportInSupabase(selectedReportId, deleteReason) !== true) {
+            throw new Error("The report was not found or has already been archived.");
         }
-
-        const updatedReports = localReports.filter(
-            report => String(report.id) !== String(selectedReportId)
-        );
-
-        if (!safeSetStorageItem(
-            ADMIN_CONFIG.STORAGE_KEY,
-            JSON.stringify(updatedReports)
-        )) {
-
-            throw new Error("Unable to save report removal to storage.");
-
-        }
-
-        reports = updatedReports;
-        filteredReports = Array.isArray(filteredReports)
-            ? filteredReports.filter(
-                report => String(report.id) !== String(selectedReportId)
-            )
-            : [];
 
         if (deleteReasonField) {
 
@@ -1880,8 +1687,8 @@ async function deleteSelectedReport() {
         }
 
         showToast(
-            "Report Deleted",
-            `${selectedReportId} has been archived and removed from saved reports.`,
+            "Report Archived",
+            `${selectedReportId} has been moved to the archive.`,
             "success"
         );
 
@@ -1895,7 +1702,7 @@ async function deleteSelectedReport() {
 
         showToast(
             "Delete Failed",
-            "The report could not be deleted. Please refresh and try again.",
+            error.message || "The report could not be archived. Please try again.",
             "error"
         );
 
@@ -2022,7 +1829,7 @@ function openReportDrawer(reportId) {
         )
         .value =
             report.status ||
-            "Report Submitted";
+            "Under Review";
 
 
     document
@@ -2032,7 +1839,7 @@ function openReportDrawer(reportId) {
         .value = "";
 
 
-    setupDrawerPhoto(report);
+    setupDrawerAttachments(report);
 
 
     reportDrawer.classList.add(
@@ -2075,44 +1882,85 @@ function closeReportDrawer() {
    DRAWER PHOTO
 ========================================================= */
 
-function setupDrawerPhoto(report) {
-
+function setupDrawerAttachments(report) {
     const section =
         document.getElementById(
             "drawerPhotoSection"
         );
+    const container = document.getElementById("drawerAttachments");
+    const attachments = Array.isArray(report.attachments) && report.attachments.length
+        ? report.attachments
+        : report.photo
+            ? [{
+                file_name: report.file_name || "Uploaded file",
+                file_path: report.photo,
+                media_type: report.media_type || "image"
+            }]
+            : [];
 
+    container.replaceChildren();
+    if (attachments.length === 0) {
+        section.style.display = "none";
+        return;
+    }
 
-    const image =
-        document.getElementById(
-            "drawerPhoto"
+    section.style.display = "block";
+
+    attachments.forEach(attachment => {
+        if (!attachment || typeof attachment.file_path !== "string" || !attachment.file_path) {
+            return;
+        }
+        let mediaUrl;
+        try {
+            mediaUrl = new URL(attachment.file_path, SUPABASE_PROJECT_URL);
+        } catch (error) {
+            return;
+        }
+        if (
+            mediaUrl.origin !== new URL(SUPABASE_PROJECT_URL).origin
+            || !mediaUrl.pathname.startsWith("/storage/v1/object/public/report-media/reports/")
+        ) {
+            return;
+        }
+
+        const item = document.createElement("div");
+        item.className = "drawer-attachment";
+
+        const media = document.createElement(
+            attachment.media_type === "video" ? "video" : "img"
         );
+        media.src = mediaUrl.href;
+        if (attachment.media_type === "video") {
+            media.controls = true;
+            media.playsInline = true;
+        } else {
+            media.alt = attachment.file_name || "Uploaded report photo";
+        }
+        media.addEventListener("error", () => {
+            media.hidden = true;
+            const unavailable = document.createElement("p");
+            unavailable.textContent = "Preview unavailable. Use the link below to open the uploaded file.";
+            item.insertBefore(unavailable, media.nextSibling);
+        }, { once: true });
+        item.appendChild(media);
 
+        const link = document.createElement("a");
+        link.href = mediaUrl.href;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "Open uploaded file";
+        item.appendChild(link);
 
-    /*
-        Future database/API response should provide:
+        if (attachment.file_name) {
+            const name = document.createElement("p");
+            name.textContent = attachment.file_name;
+            item.appendChild(name);
+        }
+        container.appendChild(item);
+    });
 
-        report.photo
-
-        Example:
-
-        "uploads/reports/CV-26-0001.jpg"
-    */
-
-
-    if (report.photo) {
-
-        image.src =
-            report.photo;
-
-        section.style.display =
-            "block";
-
-    } else {
-
-        section.style.display =
-            "none";
-
+    if (container.childElementCount === 0) {
+        section.style.display = "none";
     }
 
 }
@@ -3038,9 +2886,13 @@ function setupButtons() {
         )
         .addEventListener(
             "click",
-            () => {
-
-                window.location.href = "logout.php";
+            async () => {
+                try {
+                    await signOutAdminFromSupabase();
+                } catch (error) {
+                    console.error("Admin sign-out failed:", error);
+                }
+                window.location.href = "adlog.html";
 
             }
         );
@@ -3283,14 +3135,9 @@ function formatDate(value) {
     }
 
 
-    return date.toLocaleDateString(
-        "en-IN",
-        {
-            day: "numeric",
-            month: "short",
-            year: "numeric"
-        }
-    );
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    return `${day}-${month}-${date.getFullYear()}`;
 
 }
 
@@ -3317,16 +3164,11 @@ function formatDateTime(value) {
     }
 
 
-    return date.toLocaleString(
-        "en-IN",
-        {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-            hour: "numeric",
-            minute: "2-digit"
-        }
-    );
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const hour = String(date.getHours()).padStart(2, "0");
+    const minute = String(date.getMinutes()).padStart(2, "0");
+    return `${day}-${month}-${date.getFullYear()} ${hour}:${minute}`;
 
 }
 
@@ -3625,6 +3467,6 @@ console.log(
 console.log(
     "Data mode:",
     ADMIN_CONFIG.USE_API
-        ? "PHP/API"
+        ? "Supabase"
         : "Local Development"
 );

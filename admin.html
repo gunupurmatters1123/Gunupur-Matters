@@ -40,7 +40,7 @@
 </head>
 
 
-<body>
+<body class="admin-auth-pending">
 
 
 <!-- =========================================================
@@ -1123,8 +1123,7 @@
                 </h3>
 
                 <p>
-                    Administrator authentication will be
-                    connected to the PHP backend.
+                    Sign in with a Supabase Auth user whose app metadata role is set to admin.
                 </p>
 
             </div>
@@ -1147,9 +1146,7 @@
                 </h3>
 
                 <p>
-                    The frontend is structured so that
-                    reports can later be loaded through
-                    PHP/MySQL APIs.
+                    Reports, uploaded media, and status updates are stored in Supabase.
                 </p>
 
             </div>
@@ -1486,7 +1483,7 @@
 
 
 
-        <!-- PHOTO -->
+        <!-- UPLOADED MEDIA -->
 
         <div
             class="detail-section"
@@ -1494,17 +1491,10 @@
         >
 
             <h4>
-                Uploaded Photograph
+                Uploaded Photos / Videos
             </h4>
 
-            <div class="drawer-photo">
-
-                <img
-                    id="drawerPhoto"
-                    src=""
-                    alt="Report photograph"
-                >
-
+            <div class="drawer-attachments" id="drawerAttachments">
             </div>
 
         </div>
@@ -1674,6 +1664,7 @@
      JAVASCRIPT
 ========================================================= -->
 
+<script src="supabase-browser.js"></script>
 <script src="admin.js"></script>
 
 </body>

@@ -17,11 +17,8 @@ $category = trim($_POST["category"] ?? "");
 $priority = trim($_POST["priority"] ?? "Medium");
 $description = trim($_POST["description"] ?? "");
 $street = trim($_POST["street"] ?? "");
-$area = trim($_POST["area"] ?? "");
-$landmark = trim($_POST["landmark"] ?? "");
 $location_details = trim($_POST["locationDetails"] ?? "");
 $ward_number = trim($_POST["wardNumber"] ?? "");
-$pin_code = trim($_POST["pinCode"] ?? "");
 $latitude = trim($_POST["latitude"] ?? "");
 $longitude = trim($_POST["longitude"] ?? "");
 $reporter_name = trim($_POST["reporterName"] ?? "");
@@ -35,26 +32,25 @@ if ($category === "") {
     exit;
 }
 
-if ($location === "" && ($street === "" || $area === "")) {
+if ($ward_number === "" || $street === "") {
     http_response_code(400);
-    echo json_encode(["success" => false, "message" => "Please provide the street and area."]);
-    exit;
-}
-
-if ($description === "") {
-    http_response_code(400);
-    echo json_encode(["success" => false, "message" => "Please describe the issue."]);
+    echo json_encode(["success" => false, "message" => "Please provide the ward number and street."]);
     exit;
 }
 
 if ($location === "") {
     $locationParts = array_filter([
-        $area,
         $street,
-        $ward_number !== "" ? "Ward " . $ward_number : "",
-        $pin_code
+        $ward_number
     ]);
     $location = implode(", ", $locationParts);
+}
+
+$descriptionLength = preg_match_all('/./us', $description);
+if ($descriptionLength === false || $descriptionLength < 15 || $descriptionLength > 1000) {
+    http_response_code(400);
+    echo json_encode(["success" => false, "message" => "Please describe the issue in 15 to 1000 characters."]);
+    exit;
 }
 
 $file_name = null;
@@ -109,7 +105,7 @@ if (is_array($uploaded_file) && ($uploaded_file["error"] ?? UPLOAD_ERR_NO_FILE) 
 }
 
 try {
-    supabaseRequest("POST", "reports", [], [
+    $savedReports = supabaseRequest("POST", "reports", [], [
         "report_number" => $report_number,
         "title" => $title !== "" ? $title : null,
         "category" => $category,
@@ -119,9 +115,6 @@ try {
         "location_details" => $location_details !== "" ? $location_details : null,
         "ward_number" => $ward_number !== "" ? $ward_number : null,
         "street" => $street !== "" ? $street : null,
-        "area" => $area !== "" ? $area : null,
-        "landmark" => $landmark !== "" ? $landmark : null,
-        "pin_code" => $pin_code !== "" ? $pin_code : null,
         "latitude" => $latitude !== "" ? $latitude : null,
         "longitude" => $longitude !== "" ? $longitude : null,
         "reporter_name" => $reporter_name !== "" ? $reporter_name : null,
@@ -144,6 +137,15 @@ try {
     echo json_encode(["success" => false, "message" => "Unable to save your report right now. Please try again later."]);
     exit;
 }
+
+if (!isset($savedReports[0]["report_number"])) {
+    error_log("Supabase report submission did not return the generated report number.");
+    http_response_code(503);
+    echo json_encode(["success" => false, "message" => "The report was saved, but its tracking number could not be confirmed."]);
+    exit;
+}
+
+$report_number = $savedReports[0]["report_number"];
 
 echo json_encode([
     "success" => true,

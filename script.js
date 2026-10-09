@@ -350,17 +350,11 @@ reportForm.addEventListener("submit", async event => {
         document.getElementById("reporterPhone").value.trim();
 
 
-    if (
-        !category ||
-        !priority ||
-        !location ||
-        !title ||
-        !issueDescription
-    ) {
+    if (!category || !location || !issueDescription) {
 
         showToast(
             "Missing Information",
-            "Please complete all required fields.",
+            "Please choose a category, describe the issue, and add an approximate location.",
             "error"
         );
 
@@ -383,48 +377,16 @@ reportForm.addEventListener("submit", async event => {
 
 
     try {
-        let result;
-        const formData = new FormData();
-        formData.set("title", title);
-        formData.set("category", category);
-        formData.set("priority", priority);
-        formData.set("description", issueDescription);
-        formData.set("location", location);
-        formData.set("reporterName", name);
-        formData.set("reporterPhone", contact);
-        if (photo.files[0]) formData.set("photo", photo.files[0]);
-
-        const response = await fetch("config/submit-report.php", {
-            method: "POST",
-            body: formData
-        });
-
-        if (response.status === 405) {
-            result = await submitReportToSupabase({
-                title,
-                category,
-                priority,
-                description: issueDescription,
-                location,
-                reporter_name: name,
-                reporter_phone: contact
-            }, photo.files[0] || null);
-        } else {
-            const responseBody = await response.text();
-            try {
-                result = JSON.parse(responseBody);
-            } catch (error) {
-                throw new Error(
-                    responseBody.trim()
-                        ? "The server returned an invalid response. Check the PHP error log."
-                        : `The server returned an empty response (HTTP ${response.status}). Check that PHP is running.`
-                );
-            }
-        }
-
-        if ((response.status !== 405 && !response.ok) || !result.success) {
-            throw new Error(result.message || "Unable to submit report.");
-        }
+        const result = await submitReportToSupabase({
+            title,
+            category,
+            priority,
+            description: issueDescription,
+            location,
+            reporter_name: name,
+            reporter_phone: contact,
+            reporter_email: contact.includes("@") ? contact : ""
+        }, photo.files[0] || null);
 
         generatedReportId.textContent = result.report_id;
         successModal.classList.add("active");
@@ -582,19 +544,21 @@ trackForm.addEventListener("submit", async event => {
 
 async function updateStatistics() {
     try {
-        const response = await fetch("config/report-stats.php", {
-            headers: { "Accept": "application/json" }
-        });
-        const stats = await response.json();
-
-        if (!response.ok || !stats.success) {
-            throw new Error(stats.message || "Unable to load report statistics.");
+        const stats = await getReportStatisticsFromSupabase();
+        const values = [
+            stats.total,
+            stats.under_review,
+            stats.followups,
+            stats.closed
+        ].map(Number);
+        if (!values.every(Number.isFinite)) {
+            throw new Error("Supabase returned invalid report statistics.");
         }
 
-        animateNumber(document.getElementById("reportsCount"), Number(stats.total));
-        animateNumber(document.getElementById("reviewCount"), Number(stats.under_review));
-        animateNumber(document.getElementById("followupCount"), Number(stats.followups));
-        animateNumber(document.getElementById("closedCount"), Number(stats.closed));
+        animateNumber(document.getElementById("reportsCount"), values[0]);
+        animateNumber(document.getElementById("reviewCount"), values[1]);
+        animateNumber(document.getElementById("followupCount"), values[2]);
+        animateNumber(document.getElementById("closedCount"), values[3]);
     } catch (error) {
         console.error("Unable to load report statistics:", error);
     }

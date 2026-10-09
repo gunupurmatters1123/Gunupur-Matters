@@ -1022,13 +1022,21 @@ function normalizeStatusValue(value) {
 
     }
 
-    if (["Closed", "Resolved"].includes(normalized)) {
+    const key = normalized.toLowerCase().replace(/\s+/g, " ");
+    const statuses = {
+        "pending review": "Pending Review",
+        "submitted": "Under Review",
+        "report submitted": "Under Review",
+        "under review": "Under Review",
+        "follow-up initiated": "Follow-up Initiated",
+        "in progress": "Under Process",
+        "under process": "Under Process",
+        "completed": "Completed",
+        "closed": "Completed",
+        "resolved": "Completed"
+    };
 
-        return "Completed";
-
-    }
-
-    return normalized;
+    return statuses[key] || normalized;
 
 }
 
@@ -1796,15 +1804,15 @@ function openReportDrawer(reportId) {
             "drawerStatus"
         );
 
+    const reportStatus =
+        normalizeStatusValue(report.status);
 
     status.textContent =
-        report.status || "—";
+        reportStatus || "—";
 
 
     status.className =
-        `status-badge ${statusClass(
-            report.status
-        )}`;
+        `status-badge ${statusClass(reportStatus)}`;
 
 
     const priority =
@@ -1828,7 +1836,7 @@ function openReportDrawer(reportId) {
             "drawerStatusSelect"
         )
         .value =
-            report.status ||
+            reportStatus ||
             "Under Review";
 
 

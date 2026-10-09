@@ -21,14 +21,21 @@ function normalizeStatus(status) {
 
     }
 
-    const aliases = {
-        "Closed": "Completed",
-        "Resolved": "Completed",
-        "Under process": "Under Process",
-        "Under Process": "Under Process"
+    const normalized = value.toLowerCase().replace(/\s+/g, " ");
+    const statuses = {
+        "pending review": "Pending Review",
+        "submitted": "Submitted",
+        "report submitted": "Report Submitted",
+        "under review": "Under Review",
+        "follow-up initiated": "Follow-up Initiated",
+        "in progress": "Under Process",
+        "under process": "Under Process",
+        "completed": "Completed",
+        "closed": "Completed",
+        "resolved": "Completed"
     };
 
-    return aliases[value] || value;
+    return statuses[normalized] || value;
 
 }
 

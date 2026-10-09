@@ -40,8 +40,12 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         }
 
         $status = $row["status"] ?? "Pending Review";
-        if ($status === "Submitted") {
+        if (in_array(strtolower(trim($status)), ["submitted", "report submitted"], true)) {
             $status = "Under Review";
+        } elseif (in_array(strtolower(trim($status)), ["in progress", "under process"], true)) {
+            $status = "Under Process";
+        } elseif (in_array(strtolower(trim($status)), ["closed", "resolved"], true)) {
+            $status = "Completed";
         }
 
         return [
@@ -84,8 +88,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $reportId = trim($reportId);
     $status = trim($status);
     $note = trim($note);
+    if (in_array(strtolower($status), ["in progress", "under process"], true)) {
+        $status = "Under Process";
+    }
     $allowedStatuses = [
-        "Pending Review", "Under Review", "Follow-up Initiated", "In Progress",
+        "Pending Review", "Under Review", "Follow-up Initiated", "Under Process",
         "Completed", "Closed", "Resolved", "Rejected", "Submitted"
     ];
 

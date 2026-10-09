@@ -188,7 +188,8 @@ begin
                 'photo', coalesce(file_path, ''),
                 'media_type', coalesce(media_type, ''),
                 'status', case
-                    when status = 'Submitted' then 'Under Review'
+                    when lower(btrim(status)) in ('submitted', 'report submitted') then 'Under Review'
+                    when lower(btrim(status)) in ('in progress', 'under process') then 'Under Process'
                     else status
                 end,
                 'date', created_at,
@@ -243,10 +244,11 @@ security definer
 set search_path = public, pg_temp
 as $$
 declare
-    normalized_status text := case p_status
-        when 'Report Submitted' then 'Under Review'
-        when 'Submitted' then 'Under Review'
-        when 'Under Process' then 'In Progress'
+    normalized_status text := case lower(btrim(coalesce(p_status, '')))
+        when 'report submitted' then 'Under Review'
+        when 'submitted' then 'Under Review'
+        when 'under process' then 'Under Process'
+        when 'in progress' then 'Under Process'
         else p_status
     end;
 begin
@@ -258,7 +260,7 @@ begin
         or normalized_status is null
         or normalized_status not in (
             'Pending Review', 'Under Review', 'Follow-up Initiated',
-            'In Progress', 'Completed', 'Closed', 'Resolved', 'Rejected'
+            'Under Process', 'Completed', 'Closed', 'Resolved', 'Rejected'
         )
         or char_length(coalesce(p_note, '')) > 2000 then
         raise exception using errcode = '22023', message = 'Invalid report update.';

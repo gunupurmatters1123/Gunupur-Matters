@@ -861,9 +861,7 @@
 
                                     Add a Photograph
 
-                                    <span class="optional">
-                                        Optional
-                                    </span>
+                                    <b>*</b>
 
                                 </label>
 
@@ -934,10 +932,6 @@
 
                                         Your Name
 
-                                        <span class="optional">
-                                            Optional
-                                        </span>
-
                                     </label>
 
 
@@ -957,7 +951,7 @@
                                         Phone Number
 
                                         <span class="optional">
-                                            Optional
+                                            Required for SMS tracking
                                         </span>
 
                                     </label>
@@ -968,7 +962,8 @@
                                         <i class="fa-solid fa-phone"></i>
 
                                         <input type="tel" id="reporterPhone" name="reporterPhone"
-                                            placeholder="Your phone number" maxlength="20" inputmode="tel">
+                                            placeholder="10-digit mobile number or include country code"
+                                            maxlength="20" inputmode="tel" required>
 
                                     </div>
 
@@ -982,8 +977,8 @@
                                 <i class="fa-solid fa-circle-info"></i>
 
                                 <span>
-                                    Providing contact details is optional. They may help us contact you if clarification
-                                    is needed.
+                                    Required for SMS tracking. If the report is permanently deleted, the number is retained
+                                    with its ID and deletion reason so its owner can still verify tracking.
                                 </span>
 
                             </div>

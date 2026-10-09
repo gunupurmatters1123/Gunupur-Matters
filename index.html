@@ -750,7 +750,7 @@
 
                         <label for="reporterName">
                             Your Name
-                            <span>Optional</span>
+                            <span>                            Required for SMS tracking</span>
                         </label>
 
                         <input
@@ -765,15 +765,22 @@
                     <div class="form-group">
 
                         <label for="reporterPhone">
-                            Contact
-                            <span>Optional</span>
+                            Phone Number
+                            <b>*</b>
                         </label>
 
                         <input
                             type="tel"
                             id="reporterPhone"
-                            placeholder="Phone or email"
+                            placeholder="10-digit mobile number or include country code"
+                            inputmode="tel"
+                            maxlength="20"
+                            required
                         >
+                        <small class="phone-note">
+                            Required for SMS tracking. If this report is permanently deleted, the number is retained
+                            with its ID and deletion reason for verification.
+                        </small>
 
                     </div>
 
@@ -1007,10 +1014,10 @@
 
                     </div>
 
-                    <a href="track.html" button class="btn btn-primary" type="submit">
+                    <button class="btn btn-primary" type="submit">
                         Track Report
                         <i class="fa-solid fa-arrow-right"></i>
-                    </button></a>
+                    </button>
 
                 </form>
 

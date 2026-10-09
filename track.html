@@ -246,8 +246,8 @@
                 </h2>
 
                 <p>
-                    Enter the report ID you received after
-                    submitting your issue.
+                    Enter your report ID. We’ll send a one-time
+                    verification code to the phone number on the report.
                 </p>
 
 
@@ -273,11 +273,12 @@
 
 
                     <button
+                        id="requestTrackingCode"
                         type="submit"
                         class="track-button"
                     >
 
-                        Track Report
+                        Send SMS Code
 
                         <i class="fa-solid fa-arrow-right"></i>
 
@@ -285,13 +286,34 @@
 
                 </form>
 
+                <div id="trackingVerification" class="tracking-verification" style="display: none;">
+                    <label class="section-label" for="trackingCode">
+                        SMS VERIFICATION CODE
+                    </label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <input
+                            type="text"
+                            id="trackingCode"
+                            inputmode="numeric"
+                            autocomplete="one-time-code"
+                            pattern="[0-9]{4,10}"
+                            maxlength="10"
+                            placeholder="Enter the code sent to your phone"
+                        >
+                    </div>
+                    <button id="verifyTrackingCode" type="button" class="track-button">
+                        Verify and View Report
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
 
                 <div class="search-help">
 
                     <i class="fa-solid fa-circle-info"></i>
 
-                    Your report ID is provided when you submit
-                    an issue.
+                    Enter the code sent to the report’s phone number. Requests are rate-limited.
 
                 </div>
 

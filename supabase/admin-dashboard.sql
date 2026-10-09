@@ -29,8 +29,10 @@ grant all privileges on table public.report_attachments to service_role;
 create table if not exists public.deleted_report_tracking (
     report_number text primary key,
     deletion_reason text not null,
+    reporter_phone text,
     deleted_at timestamptz not null default now()
 );
+alter table public.deleted_report_tracking add column if not exists reporter_phone text;
 
 alter table public.deleted_report_tracking enable row level security;
 revoke all privileges on table public.deleted_report_tracking from public, anon, authenticated;
@@ -126,7 +128,7 @@ begin
         attachment_name,
         attachment_path,
         attachment_media_type,
-        'Under Review'
+        'Pending Review'
     )
     returning report_number into saved_report_number;
 
@@ -198,7 +200,7 @@ begin
                 'photo', coalesce(file_path, ''),
                 'media_type', coalesce(media_type, ''),
                 'status', case
-                    when lower(btrim(status)) in ('submitted', 'report submitted') then 'Under Review'
+                    when lower(btrim(status)) in ('submitted', 'report submitted') then 'Report Submitted'
                     when lower(btrim(status)) in ('in progress', 'under process') then 'Under Process'
                     else status
                 end,
@@ -255,8 +257,8 @@ set search_path = public, pg_temp
 as $$
 declare
     normalized_status text := case lower(btrim(coalesce(p_status, '')))
-        when 'report submitted' then 'Under Review'
-        when 'submitted' then 'Under Review'
+        when 'report submitted' then 'Report Submitted'
+        when 'submitted' then 'Report Submitted'
         when 'under process' then 'Under Process'
         when 'in progress' then 'Under Process'
         else p_status
@@ -269,7 +271,7 @@ begin
     if p_report_number is null or btrim(p_report_number) = ''
         or normalized_status is null
         or normalized_status not in (
-            'Pending Review', 'Under Review', 'Follow-up Initiated',
+            'Pending Review', 'Report Submitted', 'Under Review', 'Follow-up Initiated',
             'Under Process', 'Completed', 'Closed', 'Resolved', 'Rejected'
         )
         or char_length(coalesce(p_note, '')) > 2000 then
@@ -424,16 +426,18 @@ begin
     end if;
 
     insert into public.deleted_report_tracking (
-        report_number, deletion_reason, deleted_at
+        report_number, deletion_reason, reporter_phone, deleted_at
     )
     select
         report_number,
         coalesce(nullif(btrim(archive_reason), ''), 'No reason was recorded.'),
+        reporter_phone,
         now()
     from public.reports
     where report_number = p_report_number and status = 'Archived'
     on conflict (report_number) do update
     set deletion_reason = excluded.deletion_reason,
+        reporter_phone = excluded.reporter_phone,
         deleted_at = excluded.deleted_at;
 
     delete from public.reports
@@ -455,7 +459,7 @@ as $$
     select jsonb_build_object(
         'total', count(*),
         'under_review', count(*) filter (
-            where status in ('Pending Review', 'Under Review', 'Submitted')
+            where status in ('Pending Review', 'Report Submitted', 'Under Review', 'Submitted')
         ),
         'followups', count(*) filter (
             where status = 'Follow-up Initiated'

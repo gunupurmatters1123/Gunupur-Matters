@@ -11,6 +11,20 @@
 const trackForm =
     document.getElementById("trackForm");
 
+const trackingVerification =
+    document.getElementById("trackingVerification");
+
+const trackingCode =
+    document.getElementById("trackingCode");
+
+const verifyTrackingCodeButton =
+    document.getElementById("verifyTrackingCode");
+
+const requestTrackingCodeButton =
+    document.getElementById("requestTrackingCode");
+
+let pendingTrackingReportId = "";
+
 function normalizeStatus(status) {
 
     const value = String(status || "").trim();
@@ -617,13 +631,6 @@ function showNotFound() {
 }
 
 
-async function findReport(reportId) {
-
-    return findReportInSupabase(reportId);
-
-}
-
-
 function showTrackingError(error) {
 
     console.error("Unable to track report:", error);
@@ -645,6 +652,42 @@ function showDeletedReport(report) {
     trackResult.classList.add("active");
     reportDetails.classList.remove("active");
     emptyState.style.display = "none";
+
+}
+
+
+function showTrackingMessage(message) {
+
+    trackResult.textContent = message;
+    trackResult.classList.add("active");
+    reportDetails.classList.remove("active");
+    emptyState.style.display = "none";
+
+}
+
+
+async function requestTrackingCode(reportId) {
+
+    pendingTrackingReportId = reportId;
+    requestTrackingCodeButton.disabled = true;
+    trackResult.classList.remove("active");
+    reportDetails.classList.remove("active");
+    emptyState.style.display = "none";
+    trackingVerification.style.display = "none";
+
+    try {
+        await sendReportTrackingCode(reportId);
+        trackingCode.value = "";
+        trackingVerification.style.display = "block";
+        showTrackingMessage(
+            "If this report ID is valid and has a registered phone number, a verification code has been sent."
+        );
+        trackingCode.focus();
+    } catch (error) {
+        showTrackingError(error);
+    } finally {
+        requestTrackingCodeButton.disabled = false;
+    }
 
 }
 
@@ -673,41 +716,52 @@ trackForm.addEventListener(
         }
 
 
-        try {
-            const report = await findReport(id);
-
-            if (!report) {
-                showNotFound();
-                return;
-            }
-
-            if (report.deleted || normalizeStatus(report.status) === "Archived") {
-                showDeletedReport(report);
-                return;
-            }
-
-            if (!isTrackableStatus(report.status)) {
-                trackResult.innerHTML = `
-                    <strong>
-                        <i class="fa-solid fa-clock"></i>
-                        Report pending admin review
-                    </strong>
-                    <br>
-                    Your report has been received and is waiting for admin approval before it can be tracked.
-                `;
-                trackResult.classList.add("active");
-                reportDetails.classList.remove("active");
-                emptyState.style.display = "none";
-                return;
-            }
-
-            displayReport(report);
-        } catch (error) {
-            showTrackingError(error);
-        }
+        await requestTrackingCode(id);
 
     }
 );
+
+
+verifyTrackingCodeButton.addEventListener("click", async () => {
+
+    const code = trackingCode.value.trim();
+    if (!pendingTrackingReportId || !code) {
+        showTrackingMessage("Enter the SMS verification code to continue.");
+        trackingCode.focus();
+        return;
+    }
+
+    verifyTrackingCodeButton.disabled = true;
+    try {
+        const result = await verifyReportTrackingCode(pendingTrackingReportId, code);
+        const report = result.report;
+        if (!report) {
+            throw new Error("The report ID or verification code is invalid or expired.");
+        }
+
+        trackingVerification.style.display = "none";
+        if (report.deleted || normalizeStatus(report.status) === "Archived") {
+            showDeletedReport(report);
+        } else if (isTrackableStatus(report.status)) {
+            trackResult.classList.remove("active");
+            displayReport(report);
+        } else {
+            showTrackingMessage("The report is not available for tracking.");
+        }
+    } catch (error) {
+        showTrackingMessage(error.message || "The verification code could not be confirmed.");
+    } finally {
+        verifyTrackingCodeButton.disabled = false;
+    }
+
+});
+
+trackingCode.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        verifyTrackingCodeButton.click();
+    }
+});
 
 
 /* =========================================================
@@ -722,6 +776,10 @@ trackId.addEventListener(
             trackId.value
                 .toUpperCase()
                 .replace(/\s+/g, "");
+
+        pendingTrackingReportId = "";
+        trackingVerification.style.display = "none";
+        trackResult.classList.remove("active");
 
     }
 );
@@ -754,23 +812,9 @@ if (urlReportId) {
             .toUpperCase()
             .trim();
 
-    findReport(trackId.value)
-        .then(report => {
-            if (!report) {
-                showNotFound();
-            } else if (report.deleted || normalizeStatus(report.status) === "Archived") {
-                showDeletedReport(report);
-            } else if (isTrackableStatus(report.status)) {
-                displayReport(report);
-            } else {
-                trackResult.textContent =
-                    "Your report has been received and is waiting for admin approval before it can be tracked.";
-                trackResult.classList.add("active");
-                reportDetails.classList.remove("active");
-                emptyState.style.display = "none";
-            }
-        })
-        .catch(showTrackingError);
+    showTrackingMessage(
+        "For privacy, enter the report ID and request an SMS code to view its status."
+    );
 
 }
 
@@ -779,12 +823,10 @@ if (urlReportId) {
    INITIAL STATE
 ========================================================= */
 
-reportDetails.classList.remove(
-    "active"
-);
-
-emptyState.style.display =
-    "block";
+reportDetails.classList.remove("active");
+if (!urlReportId) {
+    emptyState.style.display = "block";
+}
 
 
 console.log(

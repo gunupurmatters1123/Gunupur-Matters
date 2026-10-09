@@ -25,6 +25,7 @@ $reporter_name = trim($_POST["reporterName"] ?? "");
 $reporter_phone = trim($_POST["reporterPhone"] ?? "");
 $reporter_email = trim($_POST["reporterEmail"] ?? $_POST["email"] ?? "");
 $location = trim($_POST["location"] ?? "");
+$phoneForValidation = preg_replace('/[\s().-]/', '', $reporter_phone);
 
 if ($category === "") {
     http_response_code(400);
@@ -35,6 +36,12 @@ if ($category === "") {
 if ($ward_number === "" || $street === "") {
     http_response_code(400);
     echo json_encode(["success" => false, "message" => "Please provide the ward number and street."]);
+    exit;
+}
+
+if (!is_string($phoneForValidation) || !preg_match('/^(?:\+[1-9][0-9]{7,14}|00[1-9][0-9]{7,14}|0[6-9][0-9]{9}|[6-9][0-9]{9})$/', $phoneForValidation)) {
+    http_response_code(400);
+    echo json_encode(["success" => false, "message" => "Please provide a valid mobile number for SMS report tracking."]);
     exit;
 }
 
@@ -123,7 +130,7 @@ try {
         "file_name" => $file_name,
         "file_path" => $file_path,
         "media_type" => $media_type,
-        "status" => "Under Review",
+        "status" => "Pending Review",
     ]);
 } catch (Throwable $error) {
     if ($file_path !== null) {

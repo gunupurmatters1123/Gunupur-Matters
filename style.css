@@ -2426,6 +2426,14 @@ h6 {
     color: var(--danger);
 }
 
+.phone-note {
+    display: block;
+    margin-top: 7px;
+    color: #66736d;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
 
 input,
 select,

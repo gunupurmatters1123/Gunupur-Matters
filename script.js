@@ -490,50 +490,14 @@ trackForm.addEventListener("submit", async event => {
 
     event.preventDefault();
 
-
     const id =
         document.getElementById("trackId")
             .value
             .trim()
             .toUpperCase();
 
-
-    try {
-        const report = await findReportInSupabase(id);
-        if (!report) {
-            trackResult.textContent = "Report not found. Please check your report ID and try again.";
-            trackResult.classList.add("active");
-            return;
-        }
-
-        const formattedDate = new Date(report.lastUpdated || report.date)
-            .toLocaleDateString("en-IN", {
-                day: "numeric",
-                month: "long",
-                year: "numeric"
-            });
-
-        trackResult.innerHTML = `
-            <strong>
-                <i class="fa-solid fa-circle-check"></i>
-                ${escapeHtml(report.status)}
-            </strong>
-            <br>
-            <span><strong>Report:</strong> ${escapeHtml(report.title || "Community Issue")}</span>
-            <br>
-            <span><strong>Category:</strong> ${escapeHtml(report.category || "Not specified")}</span>
-            <br>
-            <span><strong>Location:</strong> ${escapeHtml(report.location || "Not specified")}</span>
-            <br>
-            <span><strong>Last Updated:</strong> ${formattedDate}</span>
-        `;
-        trackResult.classList.add("active");
-    } catch (error) {
-        console.error("Unable to track report:", error);
-        trackResult.textContent =
-            "Report tracking is temporarily unavailable. Please try again later.";
-        trackResult.classList.add("active");
-    }
+    if (!id) return;
+    window.location.href = `track.html?id=${encodeURIComponent(id)}`;
 
 });
 

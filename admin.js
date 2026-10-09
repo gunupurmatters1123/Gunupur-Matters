@@ -1025,8 +1025,8 @@ function normalizeStatusValue(value) {
     const key = normalized.toLowerCase().replace(/\s+/g, " ");
     const statuses = {
         "pending review": "Pending Review",
-        "submitted": "Under Review",
-        "report submitted": "Under Review",
+        "submitted": "Report Submitted",
+        "report submitted": "Report Submitted",
         "under review": "Under Review",
         "follow-up initiated": "Follow-up Initiated",
         "in progress": "Under Process",

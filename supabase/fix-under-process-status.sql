@@ -20,8 +20,8 @@ set search_path = public, pg_temp
 as $$
 declare
     normalized_status text := case lower(btrim(coalesce(p_status, '')))
-        when 'report submitted' then 'Under Review'
-        when 'submitted' then 'Under Review'
+        when 'report submitted' then 'Report Submitted'
+        when 'submitted' then 'Report Submitted'
         when 'under process' then 'Under Process'
         when 'in progress' then 'Under Process'
         else p_status
@@ -34,7 +34,7 @@ begin
     if p_report_number is null or btrim(p_report_number) = ''
         or normalized_status is null
         or normalized_status not in (
-            'Pending Review', 'Under Review', 'Follow-up Initiated',
+            'Pending Review', 'Report Submitted', 'Under Review', 'Follow-up Initiated',
             'Under Process', 'Completed', 'Closed', 'Resolved', 'Rejected'
         )
         or char_length(coalesce(p_note, '')) > 2000 then

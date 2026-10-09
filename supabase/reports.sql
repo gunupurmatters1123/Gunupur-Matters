@@ -23,7 +23,7 @@ create table if not exists public.reports (
     file_name text,
     file_path text,
     media_type text,
-    status text not null default 'Under Review',
+    status text not null default 'Pending Review',
     admin_remarks text,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
@@ -49,7 +49,7 @@ alter table public.reports add column if not exists reporter_email text;
 alter table public.reports add column if not exists file_name text;
 alter table public.reports add column if not exists file_path text;
 alter table public.reports add column if not exists media_type text;
-alter table public.reports add column if not exists status text not null default 'Under Review';
+alter table public.reports add column if not exists status text not null default 'Pending Review';
 alter table public.reports add column if not exists admin_remarks text;
 alter table public.reports add column if not exists archived_at timestamptz;
 alter table public.reports add column if not exists archived_status text;
@@ -82,12 +82,12 @@ set report_number = 'GM-LEGACY-' || id::text
 where report_number is null or btrim(report_number) = '';
 
 update public.reports
-set status = 'Under Review'
+set status = 'Pending Review'
 where status is null or btrim(status) = '';
 
 alter table public.reports
     alter column report_number set not null,
-    alter column status set default 'Under Review';
+    alter column status set default 'Pending Review';
 alter table public.reports
     alter column title drop not null;
 
@@ -115,8 +115,10 @@ grant all privileges on table public.report_attachments to service_role;
 create table if not exists public.deleted_report_tracking (
     report_number text primary key,
     deletion_reason text not null,
+    reporter_phone text,
     deleted_at timestamptz not null default now()
 );
+alter table public.deleted_report_tracking add column if not exists reporter_phone text;
 
 alter table public.deleted_report_tracking enable row level security;
 revoke all privileges on table public.deleted_report_tracking from public, anon, authenticated;
@@ -201,12 +203,108 @@ create policy reports_public_submit
     for insert
     to anon
     with check (
-        status = 'Under Review'
+        status = 'Pending Review'
         and report_number ~ '^GM-[0-9]{2}-[0-9]{4,}$'
         and char_length(coalesce(description, '')) between 15 and 1000
         and nullif(btrim(category), '') is not null
         and nullif(btrim(location), '') is not null
     );
+
+create or replace function public.report_is_duplicate(
+    p_category text,
+    p_location text,
+    p_description text
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+    select exists (
+        select 1
+        from public.reports
+        where lower(regexp_replace(btrim(coalesce(category, '')), '\s+', ' ', 'g'))
+                = lower(regexp_replace(btrim(coalesce(p_category, '')), '\s+', ' ', 'g'))
+          and lower(regexp_replace(btrim(coalesce(location, '')), '\s+', ' ', 'g'))
+                = lower(regexp_replace(btrim(coalesce(p_location, '')), '\s+', ' ', 'g'))
+          and lower(regexp_replace(btrim(coalesce(description, '')), '\s+', ' ', 'g'))
+                = lower(regexp_replace(btrim(coalesce(p_description, '')), '\s+', ' ', 'g'))
+    );
+$$;
+
+revoke all on function public.report_is_duplicate(text, text, text) from public;
+grant execute on function public.report_is_duplicate(text, text, text) to anon, authenticated;
+
+create or replace function public.reject_duplicate_report()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+    duplicate_report_number text;
+    duplicate_key text;
+begin
+    new.status := 'Pending Review';
+
+    duplicate_key := concat_ws(
+        chr(31),
+        lower(regexp_replace(btrim(coalesce(new.category, '')), '\s+', ' ', 'g')),
+        lower(regexp_replace(btrim(coalesce(new.location, '')), '\s+', ' ', 'g')),
+        lower(regexp_replace(btrim(coalesce(new.description, '')), '\s+', ' ', 'g'))
+    );
+
+    perform pg_advisory_xact_lock(hashtextextended(duplicate_key, 0));
+
+    select report_number
+    into duplicate_report_number
+    from public.reports
+    where lower(regexp_replace(btrim(coalesce(category, '')), '\s+', ' ', 'g'))
+            = lower(regexp_replace(btrim(coalesce(new.category, '')), '\s+', ' ', 'g'))
+      and lower(regexp_replace(btrim(coalesce(location, '')), '\s+', ' ', 'g'))
+            = lower(regexp_replace(btrim(coalesce(new.location, '')), '\s+', ' ', 'g'))
+      and lower(regexp_replace(btrim(coalesce(description, '')), '\s+', ' ', 'g'))
+            = lower(regexp_replace(btrim(coalesce(new.description, '')), '\s+', ' ', 'g'))
+    limit 1;
+
+    if duplicate_report_number is not null then
+        raise exception using
+            errcode = '23505',
+            message = 'This issue has already been reported. Please track the existing report instead of submitting it again.';
+    end if;
+
+    return new;
+end;
+$$;
+
+drop trigger if exists reports_reject_duplicate_submission on public.reports;
+create trigger reports_reject_duplicate_submission
+    before insert on public.reports
+    for each row execute function public.reject_duplicate_report();
+
+create or replace function public.validate_report_tracking_phone()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+declare
+    compact_phone text;
+begin
+    compact_phone := regexp_replace(btrim(coalesce(new.reporter_phone, '')), '[[:space:]().-]', '', 'g');
+    if compact_phone !~ '^([+][1-9][0-9]{7,14}|00[1-9][0-9]{7,14}|0[6-9][0-9]{9}|[6-9][0-9]{9})$' then
+        raise exception using
+            errcode = '22023',
+            message = 'A valid mobile phone number is required for SMS report tracking.';
+    end if;
+    return new;
+end;
+$$;
+
+drop trigger if exists reports_validate_tracking_phone on public.reports;
+create trigger reports_validate_tracking_phone
+    before insert on public.reports
+    for each row execute function public.validate_report_tracking_phone();
 
 -- Admin accounts must be authenticated users with app_metadata.role = 'admin'.
 -- Keep admin reads and updates behind these role-checked RPCs, not the publishable key.
@@ -237,7 +335,8 @@ begin
                 'photo', coalesce(file_path, ''),
                 'media_type', coalesce(media_type, ''),
                 'status', case
-                    when lower(btrim(status)) in ('submitted', 'report submitted') then 'Under Review'
+                    when lower(btrim(status)) = 'submitted' then 'Report Submitted'
+                    when lower(btrim(status)) = 'report submitted' then 'Report Submitted'
                     when lower(btrim(status)) in ('in progress', 'under process') then 'Under Process'
                     else status
                 end,
@@ -294,8 +393,8 @@ set search_path = public, pg_temp
 as $$
 declare
     normalized_status text := case lower(btrim(coalesce(p_status, '')))
-        when 'report submitted' then 'Under Review'
-        when 'submitted' then 'Under Review'
+        when 'report submitted' then 'Report Submitted'
+        when 'submitted' then 'Report Submitted'
         when 'under process' then 'Under Process'
         when 'in progress' then 'Under Process'
         else p_status
@@ -308,7 +407,7 @@ begin
     if p_report_number is null or btrim(p_report_number) = ''
         or normalized_status is null
         or normalized_status not in (
-            'Pending Review', 'Under Review', 'Follow-up Initiated',
+            'Pending Review', 'Report Submitted', 'Under Review', 'Follow-up Initiated',
             'Under Process', 'Completed', 'Closed', 'Resolved', 'Rejected'
         )
         or char_length(coalesce(p_note, '')) > 2000 then
@@ -463,16 +562,18 @@ begin
     end if;
 
     insert into public.deleted_report_tracking (
-        report_number, deletion_reason, deleted_at
+        report_number, deletion_reason, reporter_phone, deleted_at
     )
     select
         report_number,
         coalesce(nullif(btrim(archive_reason), ''), 'No reason was recorded.'),
+        reporter_phone,
         now()
     from public.reports
     where report_number = p_report_number and status = 'Archived'
     on conflict (report_number) do update
     set deletion_reason = excluded.deletion_reason,
+        reporter_phone = excluded.reporter_phone,
         deleted_at = excluded.deleted_at;
 
     delete from public.reports
@@ -576,7 +677,7 @@ begin
         nullif(btrim(coalesce(p_report->>'file_name', '')), ''),
         nullif(btrim(coalesce(p_report->>'file_path', '')), ''),
         nullif(btrim(coalesce(p_report->>'media_type', '')), ''),
-        'Under Review'
+        'Pending Review'
     )
     returning report_number into saved_report_number;
 
@@ -673,7 +774,8 @@ as $$
 $$;
 
 revoke all on function public.track_report(text) from public;
-grant execute on function public.track_report(text) to anon, authenticated;
+revoke all on function public.track_report(text) from anon, authenticated;
+grant execute on function public.track_report(text) to service_role;
 
 create or replace function public.report_statistics()
 returns jsonb
@@ -685,7 +787,7 @@ as $$
     select jsonb_build_object(
         'total', count(*),
         'under_review', count(*) filter (
-            where status in ('Pending Review', 'Under Review', 'Submitted')
+            where status in ('Pending Review', 'Report Submitted', 'Under Review', 'Submitted')
         ),
         'followups', count(*) filter (
             where status = 'Follow-up Initiated'

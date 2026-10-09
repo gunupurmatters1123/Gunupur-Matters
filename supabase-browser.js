@@ -18,7 +18,7 @@ async function supabaseFetch(path, options) {
         let message = `Supabase request failed (HTTP ${response.status}).`;
         try {
             const error = await response.json();
-            message = error.message || error.hint || message;
+            message = error.message || error.error || error.hint || message;
         } catch (parseError) {
             console.error("Unable to read Supabase error response:", parseError);
         }
@@ -33,6 +33,26 @@ async function submitReportToSupabase(report, file = null) {
     let mediaType = null;
     let fileName = null;
     let mediaContentType = null;
+
+    const compactPhone = String(report.reporter_phone || "").trim().replace(/[\s().-]/g, "");
+    if (!/^(?:\+[1-9]\d{7,14}|00[1-9]\d{7,14}|0[6-9]\d{9}|[6-9]\d{9})$/.test(compactPhone)) {
+        throw new Error("Enter a valid phone number so you can verify and track this report by SMS.");
+    }
+
+    const duplicateCheck = await supabaseFetch("/rest/v1/rpc/report_is_duplicate", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            p_category: report.category,
+            p_location: report.location,
+            p_description: report.description
+        })
+    });
+    if (await duplicateCheck.json()) {
+        throw new Error("This issue has already been reported. Please track the existing report instead of submitting it again.");
+    }
 
     if (file) {
         if (file.size > 30 * 1024 * 1024) {
@@ -128,13 +148,24 @@ async function submitReportToSupabase(report, file = null) {
     return { success: true, report_id: reportNumber, report_number: reportNumber };
 }
 
-async function findReportInSupabase(reportNumber) {
-    const response = await supabaseFetch("/rest/v1/rpc/track_report", {
+async function sendReportTrackingCode(reportNumber) {
+    const response = await supabaseFetch("/functions/v1/report-tracking-otp", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ p_report_number: reportNumber })
+        body: JSON.stringify({ action: "send", reportId: reportNumber })
+    });
+    return response.json();
+}
+
+async function verifyReportTrackingCode(reportNumber, code) {
+    const response = await supabaseFetch("/functions/v1/report-tracking-otp", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ action: "verify", reportId: reportNumber, code })
     });
     return response.json();
 }

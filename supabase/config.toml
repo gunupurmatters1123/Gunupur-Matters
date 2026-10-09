@@ -1,0 +1,2 @@
+[functions.report-tracking-otp]
+verify_jwt = false

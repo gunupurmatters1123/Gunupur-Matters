@@ -41,7 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
 
         $status = $row["status"] ?? "Pending Review";
         if (in_array(strtolower(trim($status)), ["submitted", "report submitted"], true)) {
-            $status = "Under Review";
+            $status = "Report Submitted";
         } elseif (in_array(strtolower(trim($status)), ["in progress", "under process"], true)) {
             $status = "Under Process";
         } elseif (in_array(strtolower(trim($status)), ["closed", "resolved"], true)) {
@@ -93,7 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
     $allowedStatuses = [
         "Pending Review", "Under Review", "Follow-up Initiated", "Under Process",
-        "Completed", "Closed", "Resolved", "Rejected", "Submitted"
+        "Completed", "Closed", "Resolved", "Rejected", "Submitted", "Report Submitted"
     ];
 
     if ($reportId === "" || !in_array($status, $allowedStatuses, true)) {
@@ -106,7 +106,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $updated = supabaseRequest("PATCH", "reports", [
             "report_number" => "eq." . $reportId,
         ], [
-            "status" => $status === "Submitted" ? "Under Review" : $status,
+            "status" => $status === "Submitted" ? "Report Submitted" : $status,
             "admin_remarks" => $note !== "" ? $note : null,
         ]);
     } catch (Throwable $error) {

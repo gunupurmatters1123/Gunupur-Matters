@@ -636,6 +636,19 @@ function showTrackingError(error) {
 }
 
 
+function showDeletedReport(report) {
+
+    const reason = String(report.deleteReason || "").trim();
+    trackResult.textContent = reason
+        ? `This report was removed by the administrators. Reason: ${reason}`
+        : "This report was removed by the administrators. No reason was recorded.";
+    trackResult.classList.add("active");
+    reportDetails.classList.remove("active");
+    emptyState.style.display = "none";
+
+}
+
+
 /* =========================================================
    TRACK REPORT
 ========================================================= */
@@ -665,6 +678,11 @@ trackForm.addEventListener(
 
             if (!report) {
                 showNotFound();
+                return;
+            }
+
+            if (report.deleted || normalizeStatus(report.status) === "Archived") {
+                showDeletedReport(report);
                 return;
             }
 
@@ -740,6 +758,8 @@ if (urlReportId) {
         .then(report => {
             if (!report) {
                 showNotFound();
+            } else if (report.deleted || normalizeStatus(report.status) === "Archived") {
+                showDeletedReport(report);
             } else if (isTrackableStatus(report.status)) {
                 displayReport(report);
             } else {

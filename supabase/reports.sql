@@ -112,6 +112,16 @@ alter table public.report_attachments enable row level security;
 revoke all privileges on table public.report_attachments from public, anon, authenticated;
 grant all privileges on table public.report_attachments to service_role;
 
+create table if not exists public.deleted_report_tracking (
+    report_number text primary key,
+    deletion_reason text not null,
+    deleted_at timestamptz not null default now()
+);
+
+alter table public.deleted_report_tracking enable row level security;
+revoke all privileges on table public.deleted_report_tracking from public, anon, authenticated;
+grant all privileges on table public.deleted_report_tracking to service_role;
+
 create table if not exists public.report_number_counters (
     year_code text primary key,
     last_value integer not null check (last_value >= 0)
@@ -452,6 +462,19 @@ begin
         return false;
     end if;
 
+    insert into public.deleted_report_tracking (
+        report_number, deletion_reason, deleted_at
+    )
+    select
+        report_number,
+        coalesce(nullif(btrim(archive_reason), ''), 'No reason was recorded.'),
+        now()
+    from public.reports
+    where report_number = p_report_number and status = 'Archived'
+    on conflict (report_number) do update
+    set deletion_reason = excluded.deletion_reason,
+        deleted_at = excluded.deleted_at;
+
     delete from public.reports
     where report_number = p_report_number and status = 'Archived';
     return found;
@@ -600,19 +623,42 @@ language sql
 security definer
 set search_path = public, pg_temp
 as $$
-    select jsonb_build_object(
-        'id', report_number,
-        'title', coalesce(title, ''),
-        'category', coalesce(category, ''),
-        'priority', coalesce(priority, 'Medium'),
-        'description', coalesce(description, ''),
-        'location', coalesce(location, ''),
-        'status', coalesce(status, 'Pending Review'),
-        'date', created_at,
-        'lastUpdated', updated_at
-    )
-    from public.reports
-    where report_number = p_report_number
+    select tracked.report
+    from (
+        select
+            jsonb_build_object(
+                'id', report_number,
+                'title', coalesce(title, ''),
+                'category', coalesce(category, ''),
+                'priority', coalesce(priority, 'Medium'),
+                'description', coalesce(description, ''),
+                'location', coalesce(location, ''),
+                'status', case when status = 'Archived' then 'Archived' else coalesce(status, 'Pending Review') end,
+                'deleted', status = 'Archived',
+                'deleteReason', case when status = 'Archived' then coalesce(archive_reason, '') else '' end,
+                'date', created_at,
+                'lastUpdated', updated_at
+            ) as report,
+            0 as sort_order
+        from public.reports
+        where report_number = p_report_number
+
+        union all
+
+        select
+            jsonb_build_object(
+                'id', report_number,
+                'status', 'Archived',
+                'deleted', true,
+                'deleteReason', deletion_reason,
+                'date', null,
+                'lastUpdated', deleted_at
+            ) as report,
+            1 as sort_order
+        from public.deleted_report_tracking
+        where report_number = p_report_number
+    ) tracked
+    order by tracked.sort_order
     limit 1;
 $$;
 

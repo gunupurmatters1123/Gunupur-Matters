@@ -26,6 +26,16 @@ alter table public.report_attachments enable row level security;
 revoke all privileges on table public.report_attachments from public, anon, authenticated;
 grant all privileges on table public.report_attachments to service_role;
 
+create table if not exists public.deleted_report_tracking (
+    report_number text primary key,
+    deletion_reason text not null,
+    deleted_at timestamptz not null default now()
+);
+
+alter table public.deleted_report_tracking enable row level security;
+revoke all privileges on table public.deleted_report_tracking from public, anon, authenticated;
+grant all privileges on table public.deleted_report_tracking to service_role;
+
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
     'report-media',
@@ -412,6 +422,19 @@ begin
     ) then
         return false;
     end if;
+
+    insert into public.deleted_report_tracking (
+        report_number, deletion_reason, deleted_at
+    )
+    select
+        report_number,
+        coalesce(nullif(btrim(archive_reason), ''), 'No reason was recorded.'),
+        now()
+    from public.reports
+    where report_number = p_report_number and status = 'Archived'
+    on conflict (report_number) do update
+    set deletion_reason = excluded.deletion_reason,
+        deleted_at = excluded.deleted_at;
 
     delete from public.reports
     where report_number = p_report_number and status = 'Archived';

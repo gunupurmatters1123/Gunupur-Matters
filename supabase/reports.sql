@@ -626,19 +626,29 @@ as $$
     select tracked.report
     from (
         select
-            jsonb_build_object(
-                'id', report_number,
-                'title', coalesce(title, ''),
-                'category', coalesce(category, ''),
-                'priority', coalesce(priority, 'Medium'),
-                'description', coalesce(description, ''),
-                'location', coalesce(location, ''),
-                'status', case when status = 'Archived' then 'Archived' else coalesce(status, 'Pending Review') end,
-                'deleted', status = 'Archived',
-                'deleteReason', case when status = 'Archived' then coalesce(archive_reason, '') else '' end,
-                'date', created_at,
-                'lastUpdated', updated_at
-            ) as report,
+            case
+                when status = 'Archived' then jsonb_build_object(
+                    'id', report_number,
+                    'status', 'Archived',
+                    'deleted', true,
+                    'deleteReason', coalesce(nullif(btrim(archive_reason), ''), 'No reason was recorded.'),
+                    'date', created_at,
+                    'lastUpdated', updated_at
+                )
+                else jsonb_build_object(
+                    'id', report_number,
+                    'title', coalesce(title, ''),
+                    'category', coalesce(category, ''),
+                    'priority', coalesce(priority, 'Medium'),
+                    'description', coalesce(description, ''),
+                    'location', coalesce(location, ''),
+                    'status', coalesce(status, 'Pending Review'),
+                    'deleted', false,
+                    'deleteReason', '',
+                    'date', created_at,
+                    'lastUpdated', updated_at
+                )
+            end as report,
             0 as sort_order
         from public.reports
         where report_number = p_report_number
@@ -650,7 +660,7 @@ as $$
                 'id', report_number,
                 'status', 'Archived',
                 'deleted', true,
-                'deleteReason', deletion_reason,
+                'deleteReason', coalesce(nullif(btrim(deletion_reason), ''), 'No reason was recorded.'),
                 'date', null,
                 'lastUpdated', deleted_at
             ) as report,

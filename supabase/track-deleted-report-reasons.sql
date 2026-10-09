@@ -1,6 +1,8 @@
 -- Run this in the Supabase SQL Editor to show report deletion reasons on the
 -- public tracking page, including after an archived report is permanently deleted.
 
+alter table public.reports add column if not exists archive_reason text;
+
 create table if not exists public.deleted_report_tracking (
     report_number text primary key,
     deletion_reason text not null,
@@ -10,6 +12,39 @@ create table if not exists public.deleted_report_tracking (
 alter table public.deleted_report_tracking enable row level security;
 revoke all privileges on table public.deleted_report_tracking from public, anon, authenticated;
 grant all privileges on table public.deleted_report_tracking to service_role;
+
+create or replace function public.admin_archive_report(
+    p_reason text,
+    p_report_number text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+    if coalesce(auth.jwt()->'app_metadata'->>'role', '') <> 'admin' then
+        raise exception using errcode = '42501', message = 'Admin access required.';
+    end if;
+    if p_report_number is null or btrim(p_report_number) = ''
+        or char_length(btrim(coalesce(p_reason, ''))) < 3
+        or char_length(coalesce(p_reason, '')) > 2000 then
+        raise exception using errcode = '22023', message = 'A report number and deletion reason are required.';
+    end if;
+
+    update public.reports
+    set archived_status = status,
+        status = 'Archived',
+        archived_at = now(),
+        archive_reason = btrim(p_reason)
+    where report_number = p_report_number
+      and status <> 'Archived';
+    return found;
+end;
+$$;
+
+revoke all on function public.admin_archive_report(text, text) from public;
+grant execute on function public.admin_archive_report(text, text) to authenticated;
 
 create or replace function public.admin_delete_archived_report(p_report_number text)
 returns boolean
@@ -62,19 +97,29 @@ as $$
     select tracked.report
     from (
         select
-            jsonb_build_object(
-                'id', report_number,
-                'title', coalesce(title, ''),
-                'category', coalesce(category, ''),
-                'priority', coalesce(priority, 'Medium'),
-                'description', coalesce(description, ''),
-                'location', coalesce(location, ''),
-                'status', case when status = 'Archived' then 'Archived' else coalesce(status, 'Pending Review') end,
-                'deleted', status = 'Archived',
-                'deleteReason', case when status = 'Archived' then coalesce(archive_reason, '') else '' end,
-                'date', created_at,
-                'lastUpdated', updated_at
-            ) as report,
+            case
+                when status = 'Archived' then jsonb_build_object(
+                    'id', report_number,
+                    'status', 'Archived',
+                    'deleted', true,
+                    'deleteReason', coalesce(nullif(btrim(archive_reason), ''), 'No reason was recorded.'),
+                    'date', created_at,
+                    'lastUpdated', updated_at
+                )
+                else jsonb_build_object(
+                    'id', report_number,
+                    'title', coalesce(title, ''),
+                    'category', coalesce(category, ''),
+                    'priority', coalesce(priority, 'Medium'),
+                    'description', coalesce(description, ''),
+                    'location', coalesce(location, ''),
+                    'status', coalesce(status, 'Pending Review'),
+                    'deleted', false,
+                    'deleteReason', '',
+                    'date', created_at,
+                    'lastUpdated', updated_at
+                )
+            end as report,
             0 as sort_order
         from public.reports
         where report_number = p_report_number
@@ -86,7 +131,7 @@ as $$
                 'id', report_number,
                 'status', 'Archived',
                 'deleted', true,
-                'deleteReason', deletion_reason,
+                'deleteReason', coalesce(nullif(btrim(deletion_reason), ''), 'No reason was recorded.'),
                 'date', null,
                 'lastUpdated', deleted_at
             ) as report,

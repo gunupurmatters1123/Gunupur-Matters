@@ -49,22 +49,18 @@ try {
         smsResponse(200, ["success" => true, "already_sent" => true]);
     }
 
-    $claimed = supabaseRequest("PATCH", "reports", [
-        "report_number" => "eq." . $reportNumber,
-        "report_sms_sent_at" => "is.null",
-    ], [
-        "report_sms_sent_at" => gmdate("c"),
-    ]);
-
-    if ($claimed === []) {
-        smsResponse(200, ["success" => true, "already_sent" => true]);
-    }
-
     sendReportSms(
         (string)$report["reporter_phone"],
         $reportNumber,
         $reporterName
     );
+
+    supabaseRequest("PATCH", "reports", [
+        "report_number" => "eq." . $reportNumber,
+        "report_sms_sent_at" => "is.null",
+    ], [
+        "report_sms_sent_at" => gmdate("c"),
+    ]);
 
     smsResponse(200, ["success" => true]);
 } catch (Throwable $error) {

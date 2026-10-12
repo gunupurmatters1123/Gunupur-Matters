@@ -38,8 +38,26 @@ create trigger reports_require_reporter_contact
     before insert or update of reporter_name, reporter_phone on public.reports
     for each row execute function public.require_reporter_contact();
 
+create or replace function public.keep_new_report_pending_review()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+    new.status := 'Pending Review';
+    return new;
+end;
+$$;
+
+drop trigger if exists zzz_reports_keep_new_pending_review on public.reports;
+create trigger zzz_reports_keep_new_pending_review
+    before insert on public.reports
+    for each row execute function public.keep_new_report_pending_review();
+
 alter table public.reports
     add column if not exists report_sms_sent_at timestamptz;
+alter table public.reports
+    alter column status set default 'Pending Review';
 
 create or replace function public.track_report_by_name(
     p_report_number text,

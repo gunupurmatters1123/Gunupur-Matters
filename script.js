@@ -379,6 +379,10 @@ reportForm.addEventListener("submit", async event => {
 
     }
 
+    if (!window.confirm("Are you sure you want to submit this issue? Similar reports are checked and duplicate submissions may be declined.")) {
+        return;
+    }
+
 
     try {
         const result = await submitReportToSupabase({

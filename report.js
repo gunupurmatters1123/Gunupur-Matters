@@ -380,6 +380,10 @@ if (reportForm) {
             return;
         }
 
+        if (!window.confirm("Are you sure you want to submit this issue? Similar reports are checked and duplicate submissions may be declined.")) {
+            return;
+        }
+
         const formData = new FormData(reportForm);
 
         if (photoInput && photoInput.files && photoInput.files[0]) {

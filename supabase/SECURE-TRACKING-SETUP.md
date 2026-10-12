@@ -2,15 +2,15 @@
 
 ## SMS confirmation
 
-After a report is saved, the server sends one confirmation SMS containing the reporter name and report ID. To enable it, configure these server environment variables:
+After a report is saved, the server sends one confirmation SMS to the submitted Indian mobile number. The message should say that the named person reported an issue on Gunupur Matters, include the report ID and the submission date/time in IST, and state that the report is Pending Review.
 
 - `MSG91_AUTH_KEY`
 - `MSG91_FLOW_TEMPLATE_ID`
 - `SUPABASE_SECRET_KEY` (or the existing `SUPABASE_SERVICE_ROLE_KEY`)
 
-The MSG91 Flow template must be approved and contain `VAR1` for the reporter name and `VAR2` for the report ID. The web server must run PHP with cURL enabled and have all three environment variables configured. Never put provider or Supabase secret keys in browser code.
+Configure these as server-side environment variables in Vercel and redeploy. The MSG91 Flow template must be approved and map `VAR1` to the reporter name, `VAR2` to the report ID, and `VAR3` to the submission date/time. For example: `Dear {#var#}, you reported an issue on Gunupur Matters on {#var#}. Report ID: {#var#}. Status: Pending Review. We will update you after review. - Gunupur Matters`. Ensure the text and variables match the approved MSG91/DLT template. Never put provider or Supabase secret keys in browser code.
 
-The report is saved even if SMS delivery fails; the submission page will say when the SMS was not sent. Check the PHP server error log for the reason. Confirm the MSG91 Flow template ID, recipient variable names, account balance, and applicable DLT/template approval before testing a real mobile number.
+The report is saved even if SMS delivery fails; the submission page will say when the SMS was not sent. Check the Vercel Function logs for the reason. Confirm the MSG91 Flow template ID, recipient variable names, account balance, and applicable DLT/template approval before testing a real mobile number.
 
 ## Tracking and duplicate reports
 
@@ -20,4 +20,4 @@ The existing database trigger blocks duplicate submissions and returns the exist
 
 ## Deploy
 
-Run `secure-report-tracking.sql` after the report SQL files, then deploy the updated site. Its insert trigger forces every new report to start as **Pending Review** regardless of the value sent by the browser; the status stays there until an admin changes it. The admin action defaults to **Review**. Configure the SMS server settings above separately.
+Run `secure-report-tracking.sql` after the report SQL files, then deploy the updated site. Its insert trigger forces every new report to start as **Pending Review** regardless of the value sent by the browser; the status stays there until an admin changes it. The admin action defaults to **Review**. Configure the SMS server settings above separately. Vercel serves PHP files as static text rather than running them, so report SMS is sent by the `/api/send-report-sms` serverless function.

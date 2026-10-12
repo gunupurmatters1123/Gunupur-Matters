@@ -149,7 +149,7 @@ async function submitReportToSupabase(report, file = null) {
 
 async function sendReportConfirmationSms(reportNumber, reporterName) {
     try {
-        const response = await fetch("config/send-report-sms.php", {
+        const response = await fetch("/api/send-report-sms", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

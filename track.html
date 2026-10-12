@@ -199,13 +199,7 @@
         </h1>
 
 
-        <p>
-
-            Enter your unique report ID to see the current
-            status, follow-up progress and latest update
-            on your community issue.
-
-        </p>
+        <p>Enter the report ID and the name used when reporting the issue.</p>
 
 
     </div>
@@ -237,17 +231,12 @@
 
             <div class="search-content">
 
-                <span class="section-label">
-                    REPORT ID
-                </span>
-
                 <h2>
                     Find your report
                 </h2>
 
                 <p>
-                    Enter the report ID you received after
-                    submitting your issue.
+                    Enter the details used when reporting.
                 </p>
 
 
@@ -256,42 +245,54 @@
                     class="track-form"
                 >
 
-                    <div class="input-wrapper">
-
-                        <i class="fa-solid fa-hashtag"></i>
-
-                        <input
-                            type="text"
-                            id="trackId"
-                            name="trackId"
-                            placeholder="Example: GM-26-0001"
-                            autocomplete="off"
-                            required
-                        >
-
+                    <div class="track-field">
+                        <label for="trackId">Report ID</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-hashtag"></i>
+                            <input
+                                type="text"
+                                id="trackId"
+                                name="trackId"
+                                placeholder="Example: GM-26-0001"
+                                autocomplete="off"
+                                maxlength="80"
+                                required
+                            >
+                        </div>
                     </div>
 
+                    <div class="track-field">
+                        <label for="trackName">Reporter name</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-user"></i>
+                            <input
+                                type="text"
+                                id="trackName"
+                                name="trackName"
+                                placeholder="Name used when reporting"
+                                autocomplete="name"
+                                maxlength="100"
+                                required
+                            >
+                        </div>
+                    </div>
 
                     <button
                         type="submit"
                         class="track-button"
+                        id="trackSubmitButton"
                     >
-
                         Track Report
-
                         <i class="fa-solid fa-arrow-right"></i>
-
                     </button>
 
                 </form>
-
 
                 <div class="search-help">
 
                     <i class="fa-solid fa-circle-info"></i>
 
-                    Your report ID is provided when you submit
-                    an issue.
+                    Use the same report ID and name from your submission.
 
                 </div>
 
@@ -752,10 +753,8 @@
                     </strong>
 
                     <p>
-                        This page displays only information
-                        related to the report ID entered.
-                        Personal contact information is not
-                        displayed publicly.
+                        The report ID and reporter name are used to find your report.
+                        Personal contact information is never displayed.
 
                     </p>
 
@@ -783,13 +782,11 @@
             </div>
 
             <h3>
-                Enter your report ID
+                Enter your report details
             </h3>
 
             <p>
-                Your report status and follow-up information
-                will appear here after you search for a valid
-                report ID.
+                Enter the report ID and the name used when submitting.
             </p>
 
         </div>

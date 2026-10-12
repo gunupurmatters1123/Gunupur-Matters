@@ -40,8 +40,9 @@ as $$
     );
 $$;
 
-revoke all on function public.report_is_duplicate(text, text, text) from public;
-grant execute on function public.report_is_duplicate(text, text, text) to anon, authenticated;
+revoke all on function public.report_is_duplicate(text, text, text)
+    from public, anon, authenticated;
+grant execute on function public.report_is_duplicate(text, text, text) to service_role;
 
 create or replace function public.reject_duplicate_report()
 returns trigger
@@ -78,7 +79,7 @@ begin
     if duplicate_report_number is not null then
         raise exception using
             errcode = '23505',
-            message = 'This issue has already been reported. Please track the existing report instead of submitting it again.';
+            message = 'DUPLICATE_REPORT: ' || duplicate_report_number;
     end if;
 
     return new;

@@ -2391,6 +2391,14 @@ h6 {
 }
 
 
+.tracking-consent-note {
+    margin: -5px 0 16px;
+    color: #6f7e78;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+
 .form-group {
     margin-bottom: 19px;
 }

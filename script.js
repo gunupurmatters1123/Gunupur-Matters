@@ -22,6 +22,14 @@ const reportForm =
 const trackForm =
     document.getElementById("trackForm");
 
+const trackId =
+    document.getElementById("trackId");
+
+const trackName =
+    document.getElementById("trackName");
+
+let lastSubmittedReporterName = "";
+
 const successModal =
     document.getElementById("successModal");
 
@@ -62,10 +70,6 @@ const photoPreview =
     document.getElementById("photoPreview");
 
 let selectedPhotoData = "";
-
-const trackResult =
-    document.getElementById("trackResult");
-
 
 /* =========================================================
    NAVIGATION
@@ -385,9 +389,11 @@ reportForm.addEventListener("submit", async event => {
             location,
             reporter_name: name,
             reporter_phone: contact,
-            reporter_email: contact.includes("@") ? contact : ""
+            reporter_email: ""
         }, photo.files[0] || null);
 
+        lastSubmittedReporterName = name;
+        const smsSent = await sendReportConfirmationSms(result.report_id, name);
         generatedReportId.textContent = result.report_id;
         successModal.classList.add("active");
         reportForm.reset();
@@ -398,13 +404,16 @@ reportForm.addEventListener("submit", async event => {
         await updateStatistics();
 
         showToast(
-            "Report Submitted",
-            `Your report ID is ${result.report_id}.`,
-            "success"
+            smsSent ? "Report Submitted" : "Report Submitted — SMS not sent",
+            smsSent
+                ? `Your report ID is ${result.report_id}. A confirmation SMS was sent to your mobile.`
+                : `Your report ID is ${result.report_id}. We could not send the confirmation SMS.`,
+            smsSent ? "success" : "error"
         );
     } catch (error) {
         console.error(error);
-        showToast("Submit failed", error.message || "Please try again.", "error");
+        const isDuplicate = error.message && error.message.startsWith("This issue is already reported.");
+        showToast(isDuplicate ? "Duplicate report" : "Submit failed", error.message || "Please try again.", "error");
     }
 
 });
@@ -434,18 +443,10 @@ successModal.addEventListener("click", event => {
 
 modalTrackBtn.addEventListener("click", () => {
 
-    const id =
-        generatedReportId.textContent.trim();
-
     successModal.classList.remove("active");
-
-    document.getElementById("trackId").value =
-        id;
-
-    document.getElementById("track")
-        .scrollIntoView({
-            behavior: "smooth"
-        });
+    trackId.value = generatedReportId.textContent.trim();
+    trackName.value = lastSubmittedReporterName;
+    trackForm.requestSubmit();
 
 });
 
@@ -490,13 +491,14 @@ trackForm.addEventListener("submit", async event => {
 
     event.preventDefault();
 
-    const id =
-        document.getElementById("trackId")
-            .value
-            .trim()
-            .toUpperCase();
+    const id = trackId.value.trim().toUpperCase();
+    const name = trackName.value.trim();
 
-    if (!id) return;
+    try {
+        sessionStorage.setItem("reportTrackingName", name);
+    } catch (error) {
+        console.error("Could not preserve the reporter name for tracking:", error);
+    }
     window.location.href = `track.html?id=${encodeURIComponent(id)}`;
 
 });

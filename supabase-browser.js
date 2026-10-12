@@ -19,6 +19,10 @@ async function supabaseFetch(path, options) {
         try {
             const error = await response.json();
             message = error.message || error.error || error.hint || message;
+            const duplicateMatch = message.match(/^DUPLICATE_REPORT:\s*(GM-[A-Z0-9-]{4,76})$/i);
+            if (duplicateMatch) {
+                message = `This issue is already reported. No new report was submitted. Track the existing report with ID ${duplicateMatch[1]}.`;
+            }
         } catch (parseError) {
             console.error("Unable to read Supabase error response:", parseError);
         }
@@ -34,24 +38,19 @@ async function submitReportToSupabase(report, file = null) {
     let fileName = null;
     let mediaContentType = null;
 
-    const compactPhone = String(report.reporter_phone || "").trim().replace(/[\s().-]/g, "");
-    if (!/^(?:\+[1-9]\d{7,14}|00[1-9]\d{7,14}|0[6-9]\d{9}|[6-9]\d{9})$/.test(compactPhone)) {
-        throw new Error("Enter a valid phone number so you can verify and track this report by SMS.");
-    }
+    const reporterName = String(report.reporter_name || "").trim();
+    const phoneDigits = String(report.reporter_phone || "").replace(/\D/g, "");
+    const indianMobile = phoneDigits.length === 12 && phoneDigits.startsWith("91")
+        ? phoneDigits.slice(2)
+        : phoneDigits.length === 11 && phoneDigits.startsWith("0")
+            ? phoneDigits.slice(1)
+            : phoneDigits;
 
-    const duplicateCheck = await supabaseFetch("/rest/v1/rpc/report_is_duplicate", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            p_category: report.category,
-            p_location: report.location,
-            p_description: report.description
-        })
-    });
-    if (await duplicateCheck.json()) {
-        throw new Error("This issue has already been reported. Please track the existing report instead of submitting it again.");
+    if (!reporterName || reporterName.length > 100) {
+        throw new Error("Enter your name so you can securely track this report.");
+    }
+    if (!/^[6-9]\d{9}$/.test(indianMobile)) {
+        throw new Error("Enter a valid Indian mobile number so you can verify and track this report by SMS.");
     }
 
     if (file) {
@@ -127,8 +126,8 @@ async function submitReportToSupabase(report, file = null) {
                 pin_code: report.pin_code || null,
                 latitude: report.latitude || null,
                 longitude: report.longitude || null,
-                reporter_name: report.reporter_name || null,
-                reporter_phone: report.reporter_phone || null,
+                reporter_name: reporterName,
+                reporter_phone: `+91${indianMobile}`,
                 reporter_email: report.reporter_email || null,
                 require_address: report.require_address === true,
                 file_name: fileName,
@@ -148,15 +147,30 @@ async function submitReportToSupabase(report, file = null) {
     return { success: true, report_id: reportNumber, report_number: reportNumber };
 }
 
-async function findReportInSupabase(reportNumber) {
-    const response = await supabaseFetch("/rest/v1/rpc/track_report", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ p_report_number: reportNumber })
-    });
-    return response.json();
+async function sendReportConfirmationSms(reportNumber, reporterName) {
+    try {
+        const response = await fetch("config/send-report-sms.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                report_id: reportNumber,
+                reporter_name: reporterName
+            })
+        });
+
+        const result = await response.json();
+        if (!response.ok || result.success !== true) {
+            console.error("Report confirmation SMS was not sent:", result.message || response.status);
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        console.error("Report confirmation SMS request failed:", error);
+        return false;
+    }
 }
 
 async function getReportStatisticsFromSupabase() {
@@ -166,6 +180,20 @@ async function getReportStatisticsFromSupabase() {
             "Content-Type": "application/json"
         },
         body: "{}"
+    });
+    return response.json();
+}
+
+async function findReportInSupabase(reportNumber, reporterName) {
+    const response = await supabaseFetch("/rest/v1/rpc/track_report_by_name", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            p_report_number: reportNumber,
+            p_reporter_name: reporterName
+        })
     });
     return response.json();
 }

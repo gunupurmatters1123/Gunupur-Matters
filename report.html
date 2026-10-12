@@ -332,8 +332,7 @@
                             </strong>
 
                             <p>
-                                Use your report ID to check
-                                the current status.
+                                Use your report ID and reporter name to check its status.
                             </p>
 
                         </div>
@@ -915,7 +914,7 @@
                             <div class="form-divider">
 
                                 <span>
-                                    OPTIONAL CONTACT DETAILS
+                                    DETAILS REQUIRED FOR SECURE TRACKING
                                 </span>
 
                             </div>
@@ -932,11 +931,13 @@
 
                                         Your Name
 
+                                        <b>*</b>
+
                                     </label>
 
 
                                     <input type="text" id="reporterName" name="reporterName" placeholder="Your name"
-                                        maxlength="100">
+                                        maxlength="100" autocomplete="name" required>
 
                                 </div>
 
@@ -948,11 +949,9 @@
 
                                     <label for="reporterPhone">
 
-                                        Phone Number
+                                        Indian Mobile Number
 
-                                        <span class="optional">
-                                            Optional
-                                        </span>
+                                        <b>*</b>
 
                                     </label>
 
@@ -962,7 +961,8 @@
                                         <i class="fa-solid fa-phone"></i>
 
                                         <input type="tel" id="reporterPhone" name="reporterPhone"
-                                            placeholder="Your phone number" maxlength="20" inputmode="tel">
+                                            placeholder="Indian mobile number" maxlength="20" inputmode="tel"
+                                            autocomplete="tel" required>
 
                                     </div>
 
@@ -976,8 +976,7 @@
                                 <i class="fa-solid fa-circle-info"></i>
 
                                 <span>
-                                    Providing contact details is optional. They may help us contact you if clarification
-                                    is needed.
+                                    Your name and Indian mobile number are required. We text your report ID after submission.
                                 </span>
 
                             </div>
@@ -1041,8 +1040,7 @@
                         </strong>
 
                         <p>
-                            Check its current status using
-                            your report ID.
+                            Check its status using your report ID and reporter name.
                         </p>
 
                     </div>
@@ -1121,8 +1119,8 @@
 
 
             <p>
-                Your report has been recorded. Keep this
-                report ID safe so you can check its status.
+                Your report has been recorded. Keep this ID safe. To view its status,
+                enter the same reporter name and report ID on the tracking page. We also text the report ID to your mobile.
             </p>
 
 

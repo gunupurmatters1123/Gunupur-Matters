@@ -1837,8 +1837,13 @@ function openReportDrawer(reportId) {
         )
         .value =
             reportStatus ||
-            "Under Review";
+            "Pending Review";
 
+    document
+        .getElementById(
+            "adminActionSelect"
+        )
+        .value = "Review";
 
     document
         .getElementById(

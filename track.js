@@ -56,6 +56,12 @@ function isTrackableStatus(status) {
 const trackId =
     document.getElementById("trackId");
 
+const trackName =
+    document.getElementById("trackName");
+
+const trackSubmitButton =
+    document.getElementById("trackSubmitButton");
+
 const trackResult =
     document.getElementById("trackResult");
 
@@ -617,18 +623,12 @@ function showNotFound() {
 }
 
 
-async function findReport(reportId) {
-
-    return findReportInSupabase(reportId);
-
-}
-
-
 function showTrackingError(error) {
 
     console.error("Unable to track report:", error);
-    trackResult.textContent =
-        "Report tracking is temporarily unavailable. Please try again later.";
+    trackResult.textContent = error && error.message
+        ? error.message
+        : "Report tracking is temporarily unavailable. Please try again later.";
     trackResult.classList.add("active");
     reportDetails.classList.remove("active");
     emptyState.style.display = "none";
@@ -659,22 +659,12 @@ trackForm.addEventListener(
 
         event.preventDefault();
 
-
-        const id =
-            trackId.value
-                .trim()
-                .toUpperCase();
-
-
-        if (!id) {
-
-            return;
-
-        }
-
-
+        trackSubmitButton.disabled = true;
         try {
-            const report = await findReport(id);
+            const report = await findReportInSupabase(
+                trackId.value.trim().toUpperCase(),
+                trackName.value.trim()
+            );
 
             if (!report) {
                 showNotFound();
@@ -687,14 +677,8 @@ trackForm.addEventListener(
             }
 
             if (!isTrackableStatus(report.status)) {
-                trackResult.innerHTML = `
-                    <strong>
-                        <i class="fa-solid fa-clock"></i>
-                        Report pending admin review
-                    </strong>
-                    <br>
-                    Your report has been received and is waiting for admin approval before it can be tracked.
-                `;
+                trackResult.textContent =
+                    "Your report has been received and is waiting for admin approval before it can be tracked.";
                 trackResult.classList.add("active");
                 reportDetails.classList.remove("active");
                 emptyState.style.display = "none";
@@ -704,6 +688,8 @@ trackForm.addEventListener(
             displayReport(report);
         } catch (error) {
             showTrackingError(error);
+        } finally {
+            trackSubmitButton.disabled = false;
         }
 
     }
@@ -733,7 +719,7 @@ trackId.addEventListener(
 
    Example:
 
-   report.html?id=CV-26-0001
+   track.html?id=GM-26-0001
 
 ========================================================= */
 
@@ -746,32 +732,21 @@ const urlParams =
 const urlReportId =
     urlParams.get("id");
 
-
 if (urlReportId) {
-
     trackId.value =
         urlReportId
             .toUpperCase()
             .trim();
+}
 
-    findReport(trackId.value)
-        .then(report => {
-            if (!report) {
-                showNotFound();
-            } else if (report.deleted || normalizeStatus(report.status) === "Archived") {
-                showDeletedReport(report);
-            } else if (isTrackableStatus(report.status)) {
-                displayReport(report);
-            } else {
-                trackResult.textContent =
-                    "Your report has been received and is waiting for admin approval before it can be tracked.";
-                trackResult.classList.add("active");
-                reportDetails.classList.remove("active");
-                emptyState.style.display = "none";
-            }
-        })
-        .catch(showTrackingError);
-
+try {
+    const savedTrackingName = sessionStorage.getItem("reportTrackingName");
+    if (savedTrackingName && !trackName.value) {
+        trackName.value = savedTrackingName;
+    }
+    sessionStorage.removeItem("reportTrackingName");
+} catch (error) {
+    console.error("Could not restore the reporter name for tracking:", error);
 }
 
 

@@ -26,6 +26,27 @@ $reporter_phone = trim($_POST["reporterPhone"] ?? "");
 $reporter_email = trim($_POST["reporterEmail"] ?? $_POST["email"] ?? "");
 $location = trim($_POST["location"] ?? "");
 
+$reporter_name_length = preg_match_all('/./us', $reporter_name);
+if ($reporter_name === "" || $reporter_name_length === false || $reporter_name_length > 100) {
+    http_response_code(400);
+    echo json_encode(["success" => false, "message" => "Please enter your name (up to 100 characters)."]);
+    exit;
+}
+
+$phone_digits = preg_replace('/\D+/', '', $reporter_phone) ?? "";
+if (strlen($phone_digits) === 12 && str_starts_with($phone_digits, "91")) {
+    $phone_digits = substr($phone_digits, 2);
+} elseif (strlen($phone_digits) === 11 && str_starts_with($phone_digits, "0")) {
+    $phone_digits = substr($phone_digits, 1);
+}
+
+if (!preg_match('/^[6-9][0-9]{9}$/', $phone_digits)) {
+    http_response_code(400);
+    echo json_encode(["success" => false, "message" => "Please enter a valid Indian mobile number for secure SMS tracking."]);
+    exit;
+}
+$reporter_phone = "+91" . $phone_digits;
+
 if ($category === "") {
     http_response_code(400);
     echo json_encode(["success" => false, "message" => "Please select an issue category."]);
@@ -131,6 +152,14 @@ try {
         if (is_file($savedFile)) {
             unlink($savedFile);
         }
+    }
+    if (preg_match('/DUPLICATE_REPORT:\s*(GM-[A-Z0-9-]{4,76})/i', $error->getMessage(), $matches)) {
+        http_response_code(409);
+        echo json_encode([
+            "success" => false,
+            "message" => "This issue is already reported. No new report was submitted. Track the existing report with ID " . $matches[1] . ".",
+        ]);
+        exit;
     }
     error_log("Supabase report submission failed: " . $error->getMessage());
     http_response_code(503);

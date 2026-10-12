@@ -143,7 +143,7 @@ as $$
     limit 1;
 $$;
 
-revoke all on function public.track_report(text) from public;
-grant execute on function public.track_report(text) to anon, authenticated;
+revoke all on function public.track_report(text) from public, anon, authenticated;
+grant execute on function public.track_report(text) to service_role;
 
 notify pgrst, 'reload schema';

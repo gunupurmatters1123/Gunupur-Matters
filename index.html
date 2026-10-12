@@ -751,13 +751,16 @@
 
                         <label for="reporterName">
                             Your Name
-                            <span>Optional</span>
+                            <b>*</b>
                         </label>
 
                         <input
                             type="text"
                             id="reporterName"
                             placeholder="Enter your name"
+                            maxlength="100"
+                            autocomplete="name"
+                            required
                         >
 
                     </div>
@@ -766,19 +769,27 @@
                     <div class="form-group">
 
                         <label for="reporterPhone">
-                            Contact
-                            <span>Optional</span>
+                            Indian Mobile Number
+                            <b>*</b>
                         </label>
 
                         <input
                             type="tel"
                             id="reporterPhone"
-                            placeholder="Phone or email"
+                            placeholder="10-digit mobile number"
+                            maxlength="20"
+                            inputmode="tel"
+                            autocomplete="tel"
+                            required
                         >
 
                     </div>
 
                 </div>
+
+                <p class="tracking-consent-note">
+                    We send your report ID to this number by SMS after submission.
+                </p>
 
 
                 <div class="form-row">
@@ -989,8 +1000,8 @@
                 </h2>
 
                 <p>
-                    Enter your unique Community Voice reference ID
-                    to view the latest available status.
+                    Enter your report ID and reporter name. You will verify
+                    with a code sent to the mobile number saved with the report.
                 </p>
 
                 <form id="trackForm" class="track-form">
@@ -1003,6 +1014,21 @@
                             type="text"
                             id="trackId"
                             placeholder="Example: GM-26-0001"
+                            required
+                        >
+
+                    </div>
+
+                    <div class="track-input">
+
+                        <i class="fa-solid fa-user"></i>
+
+                        <input
+                            type="text"
+                            id="trackName"
+                            placeholder="Reporter name"
+                            maxlength="100"
+                            autocomplete="name"
                             required
                         >
 
@@ -1452,8 +1478,8 @@
         </h2>
 
         <p>
-            Your report has been recorded in this demo system.
-            Keep your reference ID to track it later.
+            Your report has been recorded. Keep this ID safe. To view its status,
+            enter the same reporter name and report ID on the tracking page. We also send the report ID to your mobile by SMS.
         </p>
 
         <div class="generated-id">

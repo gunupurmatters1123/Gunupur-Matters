@@ -253,6 +253,8 @@ const modalTrackBtn = document.getElementById("modalTrackBtn");
 
 const copyReportIdBtn = document.getElementById("copyReportId");
 
+let lastReporterName = "";
+
 function openModal(reportId) {
 
     if (!successModal || !generatedReportId) {
@@ -311,7 +313,12 @@ if (modalTrackBtn) {
 
     modalTrackBtn.addEventListener("click", () => {
 
-        window.location.href = "track.html";
+        try {
+            sessionStorage.setItem("reportTrackingName", lastReporterName);
+        } catch (error) {
+            console.error("Could not preserve the reporter name for tracking:", error);
+        }
+        window.location.href = `track.html?id=${encodeURIComponent(generatedReportId.textContent.trim())}`;
 
     });
 
@@ -401,6 +408,8 @@ if (reportForm) {
                 reporter_email: value("reporterEmail") || (contact.includes("@") ? contact : "")
             }, photoInput && photoInput.files ? photoInput.files[0] : null);
 
+            lastReporterName = value("reporterName");
+            const smsSent = await sendReportConfirmationSms(result.report_id, lastReporterName);
             openModal(result.report_id);
 
             reportForm.reset();
@@ -428,11 +437,17 @@ if (reportForm) {
                 longitudeInput.value = "";
             }
 
-            showToast("Issue logged", "Your report was submitted successfully.");
+            showToast(
+                "Issue logged",
+                smsSent
+                    ? "Your report was submitted. A confirmation SMS was sent to your mobile."
+                    : "Your report was submitted, but we could not send the confirmation SMS. Please keep your report ID."
+            );
 
         } catch (error) {
             console.error(error);
-            showToast("Submit failed", error.message || "Please try again.");
+            const isDuplicate = error.message && error.message.startsWith("This issue is already reported.");
+            showToast(isDuplicate ? "Duplicate report" : "Submit failed", error.message || "Please try again.");
         }
 
     });

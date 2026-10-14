@@ -1,4 +1,3 @@
-javascript
 /* =========================================================
    GUNUPUR MATTERS
    ABOUT PAGE JAVASCRIPT
@@ -452,4 +451,3 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 });
-

@@ -42,6 +42,9 @@ const modalTrackBtn =
 const generatedReportId =
     document.getElementById("generatedReportId");
 
+const reportSmsStatus =
+    document.getElementById("reportSmsStatus");
+
 const copyReportId =
     document.getElementById("copyReportId");
 
@@ -399,6 +402,9 @@ reportForm.addEventListener("submit", async event => {
         lastSubmittedReporterName = name;
         const smsSent = await sendReportConfirmationSms(result.report_id, name);
         generatedReportId.textContent = result.report_id;
+        reportSmsStatus.textContent = smsSent
+            ? "A confirmation SMS was sent to your mobile."
+            : "We could not send a confirmation SMS. Please keep your report ID safe.";
         successModal.classList.add("active");
         reportForm.reset();
         charCount.textContent = "0";

@@ -247,6 +247,8 @@ const successModal = document.getElementById("successModal");
 
 const generatedReportId = document.getElementById("generatedReportId");
 
+const reportSmsStatus = document.getElementById("reportSmsStatus");
+
 const modalClose = document.getElementById("modalClose");
 
 const modalTrackBtn = document.getElementById("modalTrackBtn");
@@ -255,7 +257,7 @@ const copyReportIdBtn = document.getElementById("copyReportId");
 
 let lastReporterName = "";
 
-function openModal(reportId) {
+function openModal(reportId, smsSent) {
 
     if (!successModal || !generatedReportId) {
 
@@ -264,6 +266,11 @@ function openModal(reportId) {
     }
 
     generatedReportId.textContent = reportId;
+    if (reportSmsStatus) {
+        reportSmsStatus.textContent = smsSent
+            ? "A confirmation SMS was sent to your mobile."
+            : "We could not send a confirmation SMS. Please keep your report ID safe.";
+    }
 
     successModal.classList.add("active");
 
@@ -414,7 +421,7 @@ if (reportForm) {
 
             lastReporterName = value("reporterName");
             const smsSent = await sendReportConfirmationSms(result.report_id, lastReporterName);
-            openModal(result.report_id);
+            openModal(result.report_id, smsSent);
 
             reportForm.reset();
 

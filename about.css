@@ -1892,6 +1892,20 @@ img {
         translateX(3px);
 }
 
+.footer-column a.instagram-link {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+.instagram-link i {
+
+    font-size: 16px;
+}
+
 .footer-purpose p {
 
     max-width:
@@ -2363,4 +2377,3 @@ img {
             none !important;
     }
 }
-

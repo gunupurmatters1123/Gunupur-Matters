@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Follow Gunupur Matters activities, browse photos, and share your perspective.">
+    <title>Events & Activities | Gunupur Matters</title>
+    <link rel="stylesheet" href="events.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container navbar">
+            <a href="index.html" class="brand" aria-label="Gunupur Matters home">
+                <span class="brand-mark" aria-hidden="true">✓</span>
+                <span class="brand-text"><strong>Gunupur</strong><span>Matters</span></span>
+            </a>
+            <nav class="top-links" aria-label="Main navigation">
+                <a href="index.html">Home</a>
+                <a href="report.html">Report</a>
+                <a href="track.html">Track</a>
+                <a href="about.html">About</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container page-content">
+        <section class="intro">
+            <span class="eyebrow">Our work, together</span>
+            <h1>Events & activities</h1>
+            <p>Photos and updates from around Gunupur. Follow along, and share your perspective with the community.</p>
+        </section>
+
+        <section class="publish-panel" id="publishPanel" hidden>
+            <button class="publish-toggle" id="publishToggle" type="button" aria-expanded="false" aria-controls="publishForm">
+                <span aria-hidden="true">＋</span> Share an activity
+            </button>
+            <form id="publishForm" class="publish-form" hidden>
+                <label>
+                    Activity title
+                    <input type="text" name="title" maxlength="180" required>
+                </label>
+                <label>
+                    What happened?
+                    <textarea name="description" maxlength="5000" rows="4" required></textarea>
+                </label>
+                <div class="form-row">
+                    <label>
+                        Date
+                        <input type="date" name="activity_date" required>
+                    </label>
+                    <label>
+                        Location <span class="optional">(optional)</span>
+                        <input type="text" name="location" maxlength="180">
+                    </label>
+                </div>
+                <label>
+                    Activity photo
+                    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" required>
+                    <small>JPG, PNG, WebP, or GIF. Maximum 8 MB.</small>
+                </label>
+                <button type="submit" class="primary-button">Publish activity</button>
+                <p class="form-status" id="publishStatus" role="status"></p>
+            </form>
+        </section>
+        <p class="admin-hint" id="adminHint"><a href="adlog.html">Admin sign-in</a> to share an activity.</p>
+
+        <p class="page-status" id="pageStatus" role="status" aria-live="polite">Loading the latest community updates...</p>
+        <section class="timeline" id="timeline" aria-label="Community activity timeline">
+            <article class="event-card featured-event">
+                <img class="event-photo" src="Photos/prom_team.png" alt="Community members in Odisha">
+                <div class="event-content">
+                    <div class="event-meta"><span>Gunupur Matters</span><span>Community highlights</span></div>
+                    <h2>Our community, our story</h2>
+                    <p class="event-description">This is where we will share photos and updates from our community activities. Check back for the latest moments from Gunupur.</p>
+                    <div class="comments">
+                        <h3>Community perspectives</h3>
+                        <p class="no-comments">Comments will be available once the events service is connected.</p>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <script src="supabase-browser.js"></script>
+    <script src="events.js"></script>
+</body>
+</html>

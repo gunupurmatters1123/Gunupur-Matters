@@ -57,6 +57,33 @@ try {
         ) ENGINE=InnoDB
     ");
 
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS events (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(180) NOT NULL,
+            description TEXT NOT NULL,
+            location VARCHAR(180) NULL,
+            activity_date DATE NOT NULL,
+            photo_name VARCHAR(255) NOT NULL,
+            photo_path VARCHAR(500) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_events_activity_date (activity_date, created_at)
+        ) ENGINE=InnoDB
+    ");
+
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS event_comments (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            event_id INT NOT NULL,
+            author_name VARCHAR(80) NOT NULL,
+            comment_text VARCHAR(1000) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_event_comments_event_created (event_id, created_at),
+            CONSTRAINT fk_event_comments_event
+                FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB
+    ");
+
     $reportColumnDefinitions = [
         "title" => "VARCHAR(255) NULL",
         "priority" => "VARCHAR(50) NOT NULL DEFAULT 'Medium'",

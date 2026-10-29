@@ -6,31 +6,57 @@
     <meta name="description" content="Follow Gunupur Matters activities, browse photos, and share your perspective.">
     <title>Events & Activities | Gunupur Matters</title>
     <link rel="stylesheet" href="events.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
-    <header class="site-header">
-        <div class="container navbar">
-            <a href="index.html" class="brand" aria-label="Gunupur Matters home">
-                <span class="brand-mark" aria-hidden="true">✓</span>
+    <header class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="brand" aria-label="Gunupur Matters Home">
+                <span class="brand-icon"><i class="fa-solid fa-flag"></i></span>
                 <span class="brand-text"><strong>Gunupur</strong><span>Matters</span></span>
             </a>
-            <nav class="top-links" aria-label="Main navigation">
-                <a href="index.html">Home</a>
-                <a href="report.html">Report</a>
-                <a href="track.html">Track</a>
-                <a href="events.html" aria-current="page">Events</a>
-                <a href="about.html">About</a>
+            <nav class="nav-menu" id="navMenu" aria-label="Main navigation">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="events.html" class="nav-link active" aria-current="page">Events</a>
+                <a href="index.html#categories" class="nav-link">Issues</a>
+                <a href="about.html" class="nav-link">About</a>
+                <a href="report.html" class="nav-link nav-report">
+                    Report an Issue
+                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                </a>
             </nav>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open navigation menu" aria-expanded="false">
+                <i class="fa-solid fa-bars" aria-hidden="true"></i>
+            </button>
         </div>
     </header>
 
-    <main class="container page-content">
-        <section class="intro">
-            <div>
-                <span class="eyebrow">Our work, together</span>
-                <h1>Stories from our community</h1>
-                <p>Small actions, shared moments, and the people making Gunupur better.</p>
+    <main class="community-shell">
+        <section class="timeline-hero" aria-labelledby="timelineTitle">
+            <div class="hero-copy">
+                <span class="hero-badge"><span aria-hidden="true"></span> The Gunupur community timeline</span>
+                <h1 id="timelineTitle">Good things happen when <span>we come together.</span></h1>
+                <p>Real moments from around Gunupur—neighbors showing up, lending a hand, and making our town a little better every day.</p>
+                <a class="hero-link" href="#communityTimeline">Explore community stories <i class="fa-solid fa-arrow-down" aria-hidden="true"></i></a>
             </div>
+            <div class="hero-gallery" aria-label="Scenes from Gunupur">
+                <img class="gallery-main" src="Photos/prom_team.png" alt="Gunupur community members coming together">
+                <img class="gallery-top" src="Photos/temple.jpeg" alt="A community landmark in Gunupur" loading="lazy">
+                <img class="gallery-bottom" src="Photos/steps.jpeg" alt="A place cared for by the community" loading="lazy">
+                <span class="gallery-note"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> From our town, with care</span>
+            </div>
+        </section>
+
+        <section class="timeline-heading" id="communityTimeline" aria-labelledby="storiesTitle">
+            <div>
+                <span class="eyebrow">Shared with the community</span>
+                <h2 id="storiesTitle">The latest stories</h2>
+                <p>Moments, milestones, and meaningful work in Gunupur.</p>
+            </div>
+            <span class="timeline-mark"><i class="fa-solid fa-leaf" aria-hidden="true"></i> Gunupur Matters</span>
         </section>
 
         <p class="page-status" id="pageStatus" role="status" aria-live="polite">Loading the latest community updates...</p>

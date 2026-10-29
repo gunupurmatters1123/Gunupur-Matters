@@ -3,6 +3,26 @@
     const FEATURED_IMAGE = "Photos/prom_team.png";
     const timeline = document.getElementById("timeline");
     const pageStatus = document.getElementById("pageStatus");
+    const mobileMenuButton = document.getElementById("mobileMenuBtn");
+    const navMenu = document.getElementById("navMenu");
+
+    mobileMenuButton.addEventListener("click", () => {
+        const isOpen = navMenu.classList.toggle("active");
+        mobileMenuButton.setAttribute("aria-expanded", String(isOpen));
+        mobileMenuButton.setAttribute("aria-label", isOpen ? "Close navigation menu" : "Open navigation menu");
+        mobileMenuButton.querySelector("i").className = isOpen
+            ? "fa-solid fa-xmark"
+            : "fa-solid fa-bars";
+    });
+
+    navMenu.addEventListener("click", (event) => {
+        if (event.target.closest("a")) {
+            navMenu.classList.remove("active");
+            mobileMenuButton.setAttribute("aria-expanded", "false");
+            mobileMenuButton.setAttribute("aria-label", "Open navigation menu");
+            mobileMenuButton.querySelector("i").className = "fa-solid fa-bars";
+        }
+    });
 
     async function fetchRows(resource, query) {
         const response = await supabaseFetch(`${resource}?${query}`, {
@@ -147,14 +167,6 @@
         return article;
     }
 
-    function renderEmptyState() {
-        const emptyState = makeElement("div", "empty-state");
-        emptyState.append(makeElement("span", "empty-icon", "＋"));
-        emptyState.append(makeElement("h2", "", "A new story starts here"));
-        emptyState.append(makeElement("p", "", "Our next community update will appear here soon."));
-        timeline.replaceChildren(emptyState);
-    }
-
     async function loadTimeline() {
         try {
             const events = await fetchRows(
@@ -162,7 +174,7 @@
                 "select=id,title,description,location,activity_date,image_url,created_at&order=activity_date.desc,created_at.desc&limit=40"
             );
             if (events.length === 0) {
-                renderEmptyState();
+                timeline.replaceChildren();
                 pageStatus.textContent = "";
                 return;
             }

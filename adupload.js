@@ -1,7 +1,6 @@
 (() => {
+    const adminPage = document.getElementById("adminPage");
     const composer = document.getElementById("composer");
-    const accessGate = document.getElementById("accessGate");
-    const accessMessage = document.getElementById("accessMessage");
     const form = document.getElementById("activityForm");
     const captionInput = document.getElementById("caption");
     const dateInput = document.getElementById("activityDate");
@@ -48,13 +47,13 @@
                 throw new Error("Admin sign-in is unavailable.");
             }
             await getAdminSession();
+            adminPage.hidden = false;
             composer.hidden = false;
             dateInput.value = localDateValue();
             updatePreview();
         } catch (error) {
             console.error("Unable to verify event publishing access:", error);
-            accessMessage.textContent = "Sign in with an authorized admin account to publish an activity.";
-            accessGate.hidden = false;
+            window.location.replace("adlog.html?next=adupload.html");
         }
     }
 

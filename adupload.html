@@ -11,35 +11,29 @@
     <link rel="stylesheet" href="adupload.css">
 </head>
 <body>
-    <header class="site-header">
-        <div class="topbar">
-            <a class="brand" href="index.html" aria-label="Gunupur Matters home">
-                <span class="brand-mark" aria-hidden="true">GM</span>
-                <span><strong>Gunupur</strong><small>Matters</small></span>
-            </a>
-            <nav aria-label="Main navigation">
-                <a href="events.html">Community feed</a>
-                <a href="admin.html">Dashboard</a>
-            </nav>
-        </div>
-    </header>
+    <div id="adminPage" hidden>
+        <header class="site-header">
+            <div class="topbar">
+                <a class="brand" href="index.html" aria-label="Gunupur Matters home">
+                    <span class="brand-mark" aria-hidden="true">GM</span>
+                    <span><strong>Gunupur</strong><small>Matters</small></span>
+                </a>
+                <nav aria-label="Admin navigation">
+                    <a href="events.html">Community feed</a>
+                    <a href="admin.html">Dashboard</a>
+                </nav>
+            </div>
+        </header>
 
-    <main class="page-shell">
-        <div class="page-heading">
-            <a class="back-link" href="events.html"><span aria-hidden="true">←</span> Back to community feed</a>
-            <span class="eyebrow">Admin workspace</span>
-            <h1>Share a community moment</h1>
-            <p>Upload one photo and add a caption. Your update will appear in the community feed.</p>
-        </div>
+        <main class="page-shell">
+            <div class="page-heading">
+                <a class="back-link" href="admin.html"><span aria-hidden="true">←</span> Back to dashboard</a>
+                <span class="eyebrow">Admin workspace</span>
+                <h1>Share a community moment</h1>
+                <p>Upload one photo and add a caption. Your update will appear in the community feed.</p>
+            </div>
 
-        <section class="access-card" id="accessGate" hidden aria-live="polite">
-            <span class="access-icon" aria-hidden="true">✦</span>
-            <h2>Admin sign-in required</h2>
-            <p id="accessMessage">Sign in with an authorized admin account to publish an activity.</p>
-            <a class="button button-primary" href="adlog.html?next=adupload.html">Sign in to continue</a>
-        </section>
-
-        <section class="composer-layout" id="composer" hidden>
+        <section class="composer-layout" id="composer">
             <form class="composer-card" id="activityForm">
                 <div class="card-heading">
                     <span class="step-number">01</span>
@@ -106,7 +100,8 @@
                 <p class="preview-note">The preview is private until you publish your update.</p>
             </aside>
         </section>
-    </main>
+        </main>
+    </div>
 
     <script src="supabase-browser.js"></script>
     <script src="adupload.js"></script>

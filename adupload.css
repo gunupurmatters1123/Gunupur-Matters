@@ -100,11 +100,6 @@ a { color: inherit; text-decoration: none; }
 .preview-footer span { color: #bd6b6b; font-size: 1rem; }
 .preview-note { margin: 10px 4px; color: #87958f; font-size: .72rem; text-align: center; }
 
-.access-card { max-width: 560px; margin: 20px auto; padding: clamp(24px, 5vw, 40px); text-align: center; }
-.access-icon { display: grid; width: 54px; height: 54px; margin: 0 auto 13px; place-items: center; border-radius: 17px; background: #eaf5ee; color: var(--primary); font-size: 1.35rem; }
-.access-card h2 { margin: 0 0 7px; font-family: Georgia, serif; font-size: 1.6rem; }
-.access-card p { margin: 0 auto 20px; color: var(--muted); }
-
 @media (max-width: 760px) {
     .composer-layout { grid-template-columns: 1fr; }
     .preview-column { position: static; }

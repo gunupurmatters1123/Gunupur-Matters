@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Share a Gunupur Matters community activity with a photo and caption.">
+    <title>Share an Activity | Gunupur Matters</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="adupload.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="topbar">
+            <a class="brand" href="index.html" aria-label="Gunupur Matters home">
+                <span class="brand-mark" aria-hidden="true">GM</span>
+                <span><strong>Gunupur</strong><small>Matters</small></span>
+            </a>
+            <nav aria-label="Main navigation">
+                <a href="events.html">Community feed</a>
+                <a href="admin.html">Dashboard</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-shell">
+        <div class="page-heading">
+            <a class="back-link" href="events.html"><span aria-hidden="true">←</span> Back to community feed</a>
+            <span class="eyebrow">Admin workspace</span>
+            <h1>Share a community moment</h1>
+            <p>Upload one photo and add a caption. Your update will appear in the community feed.</p>
+        </div>
+
+        <section class="access-card" id="accessGate" hidden aria-live="polite">
+            <span class="access-icon" aria-hidden="true">✦</span>
+            <h2>Admin sign-in required</h2>
+            <p id="accessMessage">Sign in with an authorized admin account to publish an activity.</p>
+            <a class="button button-primary" href="adlog.html?next=adupload.html">Sign in to continue</a>
+        </section>
+
+        <section class="composer-layout" id="composer" hidden>
+            <form class="composer-card" id="activityForm">
+                <div class="card-heading">
+                    <span class="step-number">01</span>
+                    <div>
+                        <h2>Build your update</h2>
+                        <p>A good photo and a few clear words go a long way.</p>
+                    </div>
+                </div>
+
+                <label class="field-label" for="caption">Caption</label>
+                <textarea id="caption" name="caption" maxlength="5000" rows="5" required placeholder="Tell the community what happened..."></textarea>
+                <div class="field-hint"><span>Keep it warm, clear, and community-focused.</span><span id="captionCount">0 / 5000</span></div>
+
+                <div class="field-grid">
+                    <div>
+                        <label class="field-label" for="activityDate">Activity date</label>
+                        <input id="activityDate" name="activity_date" type="date" required>
+                    </div>
+                    <div>
+                        <label class="field-label" for="location">Location <span class="optional">(optional)</span></label>
+                        <input id="location" name="location" type="text" maxlength="180" placeholder="e.g. Gunupur town">
+                    </div>
+                </div>
+
+                <label class="field-label" for="photo">Activity photo</label>
+                <label class="upload-box" for="photo">
+                    <span class="upload-icon" aria-hidden="true">↑</span>
+                    <span><strong>Choose a photo</strong><small>JPG, PNG, WebP, or GIF · Up to 8 MB</small></span>
+                    <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif" required>
+                </label>
+                <p class="selected-file" id="selectedFile">No photo selected yet.</p>
+
+                <div class="form-actions">
+                    <a class="text-link" href="events.html">Cancel</a>
+                    <button class="button button-primary" id="publishButton" type="submit">Publish update <span aria-hidden="true">→</span></button>
+                </div>
+                <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
+            </form>
+
+            <aside class="preview-column" aria-label="Post preview">
+                <div class="preview-heading">
+                    <span class="eyebrow">Live preview</span>
+                    <span class="preview-label">Community feed</span>
+                </div>
+                <article class="preview-card">
+                    <div class="preview-author">
+                        <span class="avatar" aria-hidden="true">GM</span>
+                        <span><strong>Gunupur Matters</strong><small id="previewDate">Activity date</small></span>
+                    </div>
+                    <div class="preview-image" id="previewImageWrap">
+                        <img id="previewImage" alt="Preview of the activity photo" hidden>
+                        <div class="image-placeholder" id="imagePlaceholder">
+                            <span aria-hidden="true">▧</span>
+                            <strong>Your photo will appear here</strong>
+                            <small>Choose a photo to see your post preview</small>
+                        </div>
+                    </div>
+                    <div class="preview-caption">
+                        <strong id="previewLocation" hidden></strong>
+                        <p id="previewCaption">Your caption will appear here. Share a small moment that made a difference.</p>
+                    </div>
+                    <div class="preview-footer"><span aria-hidden="true">♡</span> A moment from our community</div>
+                </article>
+                <p class="preview-note">The preview is private until you publish your update.</p>
+            </aside>
+        </section>
+    </main>
+
+    <script src="supabase-browser.js"></script>
+    <script src="adupload.js"></script>
+</body>
+</html>

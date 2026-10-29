@@ -18,6 +18,10 @@ Tracking works like before, with one addition: the reporter enters the report ID
 
 The existing database trigger blocks duplicate submissions and returns the existing report ID. Run `reports.sql` and `duplicate-report-review-flow.sql` in the Supabase SQL Editor if they have not already been applied.
 
+## Community activity feed
+
+Run `events.sql` in the Supabase SQL Editor once to create the public activity feed, comments, photo bucket, and admin-only publishing policies. Admins can then publish a photo and caption from `adupload.html`; published updates appear on `events.html`.
+
 ## Deploy
 
 Run `secure-report-tracking.sql` after the report SQL files, then deploy the updated site. Its insert trigger forces every new report to start as **Pending Review** regardless of the value sent by the browser; the status stays there until an admin changes it. The admin action defaults to **Review**. Configure the SMS server settings above separately. Vercel serves PHP files as static text rather than running them, so report SMS is sent by the `/api/send-report-sms` serverless function.

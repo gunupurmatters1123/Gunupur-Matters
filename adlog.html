@@ -536,7 +536,9 @@
                     document.getElementById('email').value.trim(),
                     document.getElementById('password').value
                 );
-                window.location.replace('admin.html');
+                const requestedPage = new URLSearchParams(window.location.search).get('next');
+                const destination = requestedPage === 'adupload.html' ? requestedPage : 'admin.html';
+                window.location.replace(destination);
             } catch (error) {
                 noticeText.textContent = error.message || 'Unable to sign in.';
                 notice.classList.add('show');

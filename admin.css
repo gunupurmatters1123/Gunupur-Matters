@@ -178,7 +178,41 @@ a {
 
 
 .header-right {
+
     gap: 24px;
+
+}
+
+.publish-event-button {
+
+    min-height: 38px;
+
+    padding: 0 13px;
+
+    border-radius: 9px;
+
+    background: var(--primary-light);
+
+    color: var(--primary-dark);
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    font-size: 12px;
+
+    font-weight: 750;
+
+    white-space: nowrap;
+
+}
+
+.publish-event-button:hover {
+
+    background: var(--accent-soft);
+
 }
 
 
@@ -2846,6 +2880,22 @@ a {
     .logout-button span {
 
         display: none;
+
+    }
+
+    .publish-event-button span {
+
+        display: none;
+
+    }
+
+    .publish-event-button {
+
+        width: 38px;
+
+        justify-content: center;
+
+        padding: 0;
 
     }
 

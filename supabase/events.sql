@@ -89,13 +89,3 @@ create policy events_photo_admin_delete
         bucket_id = 'events'
         and coalesce(auth.jwt()->'app_metadata'->>'role', '') = 'admin'
     );
-
--- Seed a launch post so the feed has a real, shareable activity card on setup.
-insert into public.events (title, description, location, activity_date, image_url)
-select
-    'Our community, our story',
-    'This is where we will share photos and updates from our community activities. Check back for the latest moments from Gunupur.',
-    'Gunupur',
-    current_date,
-    'Photos/prom_team.png'
-where not exists (select 1 from public.events);

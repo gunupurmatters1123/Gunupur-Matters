@@ -40,8 +40,8 @@ a { color: inherit; text-decoration: none; }
 .nav-link:hover, .nav-link.active { color: var(--primary); background: rgba(23,107,82,.055); }
 .nav-link:hover { transform: translateY(-1px); }
 .nav-link.active::after { position: absolute; right: 12px; bottom: 3px; left: 12px; height: 2px; border-radius: 3px; background: var(--primary); content: ""; }
-.nav-link.nav-report { padding: 11px 16px; background: linear-gradient(135deg, var(--primary), #228a69); box-shadow: 0 8px 20px rgba(23,107,82,.18); color: white; }
-.nav-link.nav-report:hover { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color: white; }
+.nav-link.nav-report { padding: 11px 16px; background: var(--primary); box-shadow: 0 8px 20px rgba(23, 107, 82, .18); color: white; }
+.nav-link.nav-report:hover { background: var(--primary-dark); color: white; }
 .nav-link.nav-report::after { display: none; }
 .mobile-menu-btn { display: none; width: 42px; height: 42px; border: 1px solid var(--border); border-radius: 10px; background: white; color: var(--text); cursor: pointer; }
 

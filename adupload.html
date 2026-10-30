@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Share a Gunupur Matters community activity with a photo and caption.">
+    <meta name="description" content="Share a Gunupur Matters community activity with a photo or video and caption.">
     <title>Share an Activity | Gunupur Matters</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,7 +30,7 @@
                 <a class="back-link" href="admin.html"><span aria-hidden="true">←</span> Back to dashboard</a>
                 <span class="eyebrow">Admin workspace</span>
                 <h1>Share a community moment</h1>
-                <p>Upload one photo and add a caption. Your update will appear in the community feed.</p>
+                <p>Upload one photo or video and add a caption. Your update will appear in the community feed.</p>
             </div>
 
         <section class="composer-layout" id="composer">
@@ -44,13 +44,13 @@
                 </div>
 
                 <label class="field-label" for="caption">Caption</label>
-                <textarea id="caption" name="caption" maxlength="5000" rows="5" required placeholder="Tell the community what happened..."></textarea>
+                <textarea id="caption" name="caption" maxlength="5000" rows="5" placeholder="Tell the community what happened..."></textarea>
                 <div class="field-hint"><span>Keep it warm, clear, and community-focused.</span><span id="captionCount">0 / 5000</span></div>
 
                 <div class="field-grid">
                     <div>
                         <label class="field-label" for="activityDate">Activity date</label>
-                        <input id="activityDate" name="activity_date" type="date" required>
+                        <input id="activityDate" name="activity_date" type="date">
                     </div>
                     <div>
                         <label class="field-label" for="location">Location <span class="optional">(optional)</span></label>
@@ -58,16 +58,44 @@
                     </div>
                 </div>
 
-                <label class="field-label" for="photo">Activity photo</label>
+                <label class="field-label" for="photo">Activity photo or video</label>
                 <label class="upload-box" for="photo">
                     <span class="upload-icon" aria-hidden="true">↑</span>
-                    <span><strong>Choose a photo</strong><small>JPG, PNG, WebP, or GIF · Up to 8 MB</small></span>
-                    <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif" required>
+                    <span><strong>Choose a photo or video</strong><small>JPG, PNG, WebP, GIF, MP4, MOV, or WebM · Up to 8 MB</small></span>
+                    <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm">
                 </label>
-                <p class="selected-file" id="selectedFile">No photo selected yet.</p>
+                <p class="selected-file" id="selectedFile">No media selected yet.</p>
+
+                <fieldset class="aspect-fieldset">
+                    <legend class="field-label">Post size</legend>
+                    <div class="aspect-options">
+                        <label class="aspect-option">
+                            <input type="radio" name="media_aspect_ratio" value="portrait">
+                            <span class="aspect-choice">
+                                <span class="aspect-icon portrait" aria-hidden="true"></span>
+                                <span>Portrait <small>4:5</small></span>
+                            </span>
+                        </label>
+                        <label class="aspect-option">
+                            <input type="radio" name="media_aspect_ratio" value="square" checked>
+                            <span class="aspect-choice">
+                                <span class="aspect-icon square" aria-hidden="true"></span>
+                                <span>Square <small>1:1</small></span>
+                            </span>
+                        </label>
+                        <label class="aspect-option">
+                            <input type="radio" name="media_aspect_ratio" value="landscape">
+                            <span class="aspect-choice">
+                                <span class="aspect-icon landscape" aria-hidden="true"></span>
+                                <span>Landscape <small>1.91:1</small></span>
+                            </span>
+                        </label>
+                    </div>
+                </fieldset>
 
                 <div class="form-actions">
                     <a class="text-link" href="events.html">Cancel</a>
+                    <button class="button button-secondary" id="saveDraftButton" type="button">Save draft</button>
                     <button class="button button-primary" id="publishButton" type="submit">Publish update <span aria-hidden="true">→</span></button>
                 </div>
                 <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
@@ -85,10 +113,11 @@
                     </div>
                     <div class="preview-image" id="previewImageWrap">
                         <img id="previewImage" alt="Preview of the activity photo" hidden>
+                        <video id="previewVideo" controls playsinline preload="metadata" aria-label="Preview of the activity video" hidden></video>
                         <div class="image-placeholder" id="imagePlaceholder">
                             <span aria-hidden="true">▧</span>
-                            <strong>Your photo will appear here</strong>
-                            <small>Choose a photo to see your post preview</small>
+                            <strong>Your media will appear here</strong>
+                            <small>Choose a photo or video to see your post preview</small>
                         </div>
                     </div>
                     <div class="preview-caption">
@@ -99,6 +128,34 @@
                 </article>
                 <p class="preview-note">The preview is private until you publish your update.</p>
             </aside>
+        </section>
+
+        <section class="post-management" aria-label="Manage event posts">
+            <section class="management-panel" aria-labelledby="draftPostsTitle">
+                <div class="management-heading">
+                    <div>
+                        <span class="eyebrow">Not published</span>
+                        <h2 id="draftPostsTitle">Draft posts</h2>
+                        <p>Saved drafts are available to admins across devices.</p>
+                    </div>
+                    <span class="management-count" id="draftCount">0</span>
+                </div>
+                <p class="management-status" id="draftStatus" role="status" aria-live="polite">Loading drafts...</p>
+                <div class="management-list" id="draftList"></div>
+            </section>
+
+            <section class="management-panel" aria-labelledby="archivedPostsTitle">
+                <div class="management-heading">
+                    <div>
+                        <span class="eyebrow">Hidden from the community feed</span>
+                        <h2 id="archivedPostsTitle">Archived posts</h2>
+                        <p>Restore an archived post or permanently delete it.</p>
+                    </div>
+                    <span class="management-count" id="archiveCount">0</span>
+                </div>
+                <p class="management-status" id="archiveStatus" role="status" aria-live="polite">Loading archived posts...</p>
+                <div class="management-list" id="archiveList"></div>
+            </section>
         </section>
         </main>
     </div>

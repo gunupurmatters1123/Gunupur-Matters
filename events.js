@@ -52,6 +52,14 @@
         return `${EVENTS_BUCKET}/${String(event.image_url || "").split("/").map(encodeURIComponent).join("/")}`;
     }
 
+    function mediaAspectRatio(event) {
+        return {
+            portrait: "4 / 5",
+            square: "1 / 1",
+            landscape: "1.91 / 1"
+        }[event.media_aspect_ratio] || "4 / 3";
+    }
+
     function makeComment(comment) {
         const item = makeElement("li", "comment");
         item.append(makeElement("strong", "", comment.author_name));
@@ -123,7 +131,7 @@
         return form;
     }
 
-    function makeEventCard(event, comments) {
+    function makeEventCard(event, comments, isAdmin) {
         const article = makeElement("article", "event-card");
         article.id = `event-${event.id}`;
 
@@ -136,11 +144,55 @@
         if (event.location) header.append(makeElement("span", "post-location", event.location));
         article.append(header);
 
-        const image = makeElement("img", "event-photo");
-        image.src = imageUrl(event);
-        image.alt = String(event.title || "Gunupur Matters community activity");
-        image.loading = "lazy";
-        article.append(image);
+        if (isAdmin) {
+            const adminControls = makeElement("div", "event-admin-controls");
+            const archiveButton = makeElement("button", "event-admin-button", "Archive post");
+            archiveButton.type = "button";
+            archiveButton.addEventListener("click", async () => {
+                if (!window.confirm("Archive this post? It will be hidden from the community feed.")) return;
+                archiveButton.disabled = true;
+                try {
+                    await getAdminSession();
+                    await supabaseFetch(`/rest/v1/events?id=eq.${encodeURIComponent(event.id)}`, {
+                        method: "PATCH",
+                        headers: {
+                            Authorization: `******
+                            "Content-Type": "application/json",
+                            Prefer: "return=minimal"
+                        },
+                        body: JSON.stringify({ archived_at: new Date().toISOString() })
+                    });
+                    article.remove();
+                    pageStatus.textContent = "The post has been archived.";
+                } catch (error) {
+                    pageStatus.textContent = "The post couldn't be archived. Please try again.";
+                    archiveButton.disabled = false;
+                    console.error("Unable to archive the event post:", error);
+                }
+            });
+            adminControls.append(archiveButton);
+            article.append(adminControls);
+        }
+
+        const mediaFrame = makeElement("div", "event-media");
+        mediaFrame.style.aspectRatio = mediaAspectRatio(event);
+        const source = imageUrl(event);
+        if (/\.(mp4|mov|webm)(?:$|[?#])/i.test(String(event.image_url || ""))) {
+            const video = makeElement("video", "event-video");
+            video.src = source;
+            video.controls = true;
+            video.playsInline = true;
+            video.preload = "metadata";
+            article.append(mediaFrame);
+            mediaFrame.append(video);
+        } else {
+            const image = makeElement("img", "event-photo");
+            image.src = source;
+            image.alt = String(event.title || "Gunupur Matters community activity");
+            image.loading = "lazy";
+            mediaFrame.append(image);
+            article.append(mediaFrame);
+        }
 
         const content = makeElement("div", "event-content");
         const meta = makeElement("div", "event-meta");
@@ -169,9 +221,18 @@
 
     async function loadTimeline() {
         try {
+            let isAdmin = false;
+            if (localStorage.getItem(SUPABASE_ADMIN_SESSION_KEY)) {
+                try {
+                    await getAdminSession();
+                    isAdmin = true;
+                } catch (error) {
+                    console.error("Unable to verify event archive controls:", error);
+                }
+            }
             const events = await fetchRows(
                 "/rest/v1/events",
-                "select=id,title,description,location,activity_date,image_url,created_at&order=activity_date.desc,created_at.desc&limit=40"
+                "select=id,title,description,location,activity_date,image_url,media_aspect_ratio,created_at&archived_at=is.null&order=activity_date.desc,created_at.desc&limit=40"
             );
             if (events.length === 0) {
                 timeline.replaceChildren();
@@ -191,7 +252,8 @@
             });
             timeline.replaceChildren(...events.map((event) => makeEventCard(
                 event,
-                commentsByEvent.get(event.id) || []
+                commentsByEvent.get(event.id) || [],
+                isAdmin
             )));
             pageStatus.textContent = "";
         } catch (error) {

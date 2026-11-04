@@ -130,14 +130,19 @@
 
         const path = `events/${crypto.randomUUID()}.${details.extension}`;
         const encodedPath = path.split("/").map(encodeURIComponent).join("/");
-        const response = await supabaseFetch(`/storage/v1/object/events/${encodedPath}`, {
-            method: "POST",
-            headers: sessionHeaders(session, {
-                "Content-Type": media.type,
-                "x-upsert": "false"
-            }),
-            body: media
-        });
+        let response;
+        try {
+            response = await supabaseFetch(`/storage/v1/object/events/${encodedPath}`, {
+                method: "POST",
+                headers: sessionHeaders(session, {
+                    "Content-Type": media.type,
+                    "x-upsert": "false"
+                }),
+                body: media
+            });
+        } catch (error) {
+            throw new Error(`Media upload failed: ${error.message}`);
+        }
         if (!response.ok) throw new Error("A media file couldn't be uploaded.");
         return path;
     }
@@ -675,23 +680,22 @@
                 if (!response.ok) throw new Error("The post couldn't be updated.");
                 if (!(await response.json()).length) throw new Error("The post wasn't found or was moved to Trash.");
             } else {
-                const title = Array.from(caption).slice(0, 180).join("");
-                const response = await supabaseFetch("/rest/v1/events", {
-                    method: "POST",
-                    headers: sessionHeaders(session, {
-                        "Content-Type": "application/json",
-                        Prefer: "return=representation"
-                    }),
-                    body: JSON.stringify({
-                        title,
-                        description: caption,
-                        location: locationInput.value.trim() || null,
-                        activity_date: dateInput.value,
-                        image_url: mediaPath,
-                        media_urls: mediaPaths,
-                        media_aspect_ratio: selectedAspectRatio()
-                    })
-                });
+                let response;
+                try {
+                    response = await supabaseFetch("/rest/v1/rpc/admin_publish_event", {
+                        method: "POST",
+                        headers: sessionHeaders(session, { "Content-Type": "application/json" }),
+                        body: JSON.stringify({
+                            p_description: caption,
+                            p_location: locationInput.value.trim() || null,
+                            p_activity_date: dateInput.value,
+                            p_media_urls: mediaPaths,
+                            p_media_aspect_ratio: selectedAspectRatio()
+                        })
+                    });
+                } catch (error) {
+                    throw new Error(`Publishing failed: ${error.message}`);
+                }
                 if (!response.ok) throw new Error("The update couldn't be published.");
             }
 

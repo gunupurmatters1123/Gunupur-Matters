@@ -20,7 +20,7 @@ The existing database trigger blocks duplicate submissions and returns the exist
 
 ## Community activity feed
 
-For a new project, run `events.sql` in the Supabase SQL Editor. For an existing project, run `event-management.sql` to add missing event management columns, create the drafts table, and apply admin-only edit/archive/trash policies. The migration is safe to rerun. Admins can edit published posts, archive and restore posts, and move deleted posts to and restore them from Trash. Event deletions are recoverable; public users cannot edit or change post visibility. Comment names and text are validated in the browser and constrained by database checks.
+For a new project, run `events.sql` in the Supabase SQL Editor. For an existing project, run `event-management.sql` first, then run the latest `events.sql` to add the media schema and secure publishing functions. Both scripts are safe to rerun. Admins can edit published posts, archive and restore posts, and move deleted posts to and restore them from Trash. Event deletions are recoverable; public users cannot edit or change post visibility. Comment names and text are validated in the browser and constrained by database checks.
 
 ## Deploy
 

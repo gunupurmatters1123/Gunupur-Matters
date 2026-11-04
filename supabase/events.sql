@@ -401,4 +401,76 @@ $$;
 revoke all on function public.admin_publish_event_draft(uuid, text, text, date, text, text, text[]) from public;
 grant execute on function public.admin_publish_event_draft(uuid, text, text, date, text, text, text[]) to authenticated;
 
+create or replace function public.admin_publish_event(
+    p_description text,
+    p_location text,
+    p_activity_date date,
+    p_media_urls text[],
+    p_media_aspect_ratio text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+    published_event_id uuid;
+    media_path text;
+begin
+    if coalesce(auth.jwt()->'app_metadata'->>'role', '') <> 'admin' then
+        raise exception 'Administrator access is required.';
+    end if;
+
+    if p_description is null
+        or char_length(btrim(p_description)) not between 1 and 5000
+        or p_activity_date is null
+        or p_media_urls is null
+        or cardinality(p_media_urls) not between 1 and 10
+        or p_media_aspect_ratio not in ('portrait', 'square', 'landscape') then
+        raise exception 'The post details or media are invalid.';
+    end if;
+
+    foreach media_path in array p_media_urls loop
+        if media_path is null
+            or media_path !~ '^events/[0-9a-f-]{36}\.(jpg|png|webp|gif|mp4|mov|webm)$' then
+            raise exception 'The post contains an invalid media path.';
+        end if;
+    end loop;
+
+    if cardinality(p_media_urls) > 1
+        and exists (
+            select 1
+            from unnest(p_media_urls) as media(path)
+            where media.path ~ '\.(mp4|mov|webm)$'
+        ) then
+        raise exception 'Choose up to 10 photos or one video.';
+    end if;
+
+    insert into public.events (
+        title,
+        description,
+        location,
+        activity_date,
+        image_url,
+        media_urls,
+        media_aspect_ratio
+    )
+    values (
+        left(btrim(p_description), 180),
+        btrim(p_description),
+        nullif(btrim(p_location), ''),
+        p_activity_date,
+        p_media_urls[1],
+        p_media_urls,
+        p_media_aspect_ratio
+    )
+    returning id into published_event_id;
+
+    return published_event_id;
+end;
+$$;
+
+revoke all on function public.admin_publish_event(text, text, date, text[], text) from public, anon;
+grant execute on function public.admin_publish_event(text, text, date, text[], text) to authenticated;
+
 notify pgrst, 'reload schema';

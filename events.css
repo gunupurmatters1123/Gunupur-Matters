@@ -91,8 +91,18 @@ a { color: inherit; text-decoration: none; }
 .event-admin-button:hover { border-color: var(--primary); background: #f0f8f3; }
 .event-admin-button.danger { color: #a23a3a; }
 .event-admin-button:disabled { cursor: wait; opacity: .65; }
-.event-media { width: 100%; overflow: hidden; background: #e7efeb; }
+.event-media { position: relative; width: 100%; overflow: hidden; background: #e7efeb; }
 .event-photo, .event-video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.event-media-track { display: flex; width: 100%; height: 100%; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.event-media-track::-webkit-scrollbar { display: none; }
+.event-media-slide { flex: 0 0 100%; height: 100%; scroll-snap-align: start; }
+.event-carousel-controls { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; pointer-events: none; }
+.event-carousel-arrow { display: grid; width: 36px; height: 36px; place-items: center; margin: 0 12px; border: 0; border-radius: 50%; background: rgba(15,28,24,.58); color: #fff; font-size: 1.6rem; line-height: 1; cursor: pointer; pointer-events: auto; }
+.event-carousel-arrow:disabled { visibility: hidden; }
+.event-carousel-count { position: absolute; top: 10px; right: 12px; padding: 4px 9px; border-radius: 999px; background: rgba(15,28,24,.65); color: white; font-size: .72rem; font-weight: 750; }
+.event-carousel-pagination { position: absolute; right: 0; bottom: 10px; left: 0; display: flex; justify-content: center; gap: 5px; }
+.event-carousel-dot { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.55); box-shadow: 0 1px 3px rgba(0,0,0,.4); cursor: pointer; }
+.event-carousel-dot.active { background: #fff; transform: scale(1.2); }
 .event-content { padding: 17px 19px 19px; }
 .event-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 9px; color: var(--muted); font-size: .78rem; }
 .event-meta span { display: inline-flex; align-items: center; gap: 6px; }
@@ -104,10 +114,20 @@ a { color: inherit; text-decoration: none; }
 .comments h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: .94rem; }
 .comment-count { display: grid; min-width: 22px; height: 22px; place-items: center; padding: 0 6px; border-radius: 99px; color: var(--primary); background: #e9f5ef; font-size: .76rem; }
 .comment-list { display: grid; gap: 9px; margin: 0 0 12px; padding: 0; list-style: none; }
-.comment { padding: 0; }
+.comment { padding: 10px 12px; border: 1px solid #e8efeb; border-radius: 10px; background: #fbfdfc; }
+.comment-header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .comment strong { color: var(--text); font-size: .87rem; }
-.comment p { display: inline; margin: 0 0 0 5px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .88rem; }
-.comment time { display: block; margin-top: 2px; color: var(--muted); font-size: .68rem; }
+.comment-text { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .88rem; }
+.comment time { color: var(--muted); font-size: .68rem; }
+.comment-reports { padding: 2px 7px; border-radius: 99px; background: #fff1e9; color: #8c3d20; font-size: .68rem; font-weight: 800; }
+.comment-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 5px; }
+.comment-action-button, .show-older-comments { padding: 0; border: 0; background: transparent; color: var(--primary-dark); font-size: .72rem; font-weight: 800; cursor: pointer; }
+.comment-action-button:hover, .show-older-comments:hover { text-decoration: underline; }
+.comment-action-button.danger { color: #a23a3a; }
+.comment-action-button:disabled { cursor: wait; opacity: .65; }
+.comment-action-status { color: var(--muted); font-size: .72rem; }
+.show-older-comments { display: block; margin: 0 0 12px; }
+.comment-character-count { justify-self: end; color: var(--muted); font-size: .7rem; }
 .no-comments { margin-bottom: 10px; color: var(--muted); font-size: .82rem; }
 .comment-form { display: grid; gap: 8px; padding-top: 5px; }
 .comment-form label { display: grid; gap: 5px; font-size: .78rem; font-weight: 700; }

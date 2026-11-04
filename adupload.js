@@ -35,6 +35,7 @@
     let previewUrl = "";
     let editingDraft = null;
     let editingEvent = null;
+    let uploadedMediaPaths = [];
 
     function mediaDetails(file) {
         const formats = {
@@ -49,8 +50,29 @@
         return formats[file.type];
     }
 
+    function validateMediaFiles(files) {
+        if (files.length > 10) throw new Error("Choose no more than 10 files.");
+        const details = files.map(mediaDetails);
+        if (details.some((detail) => !detail)) {
+            throw new Error("Choose JPG, PNG, WebP, GIF, MP4, MOV, or WebM files.");
+        }
+        if (files.some((file) => file.size === 0 || file.size > 8 * 1024 * 1024)) {
+            throw new Error("Each file must be larger than 0 bytes and no larger than 8 MB.");
+        }
+        if (files.length > 1 && details.some((detail) => detail.kind === "video")) {
+            throw new Error("Choose either up to 10 photos or one video, not both.");
+        }
+        return details;
+    }
+
     function selectedAspectRatio() {
         return aspectRatioInputs.find((input) => input.checked)?.value || "square";
+    }
+
+    function savedMediaPaths(post) {
+        return Array.isArray(post?.media_urls) && post.media_urls.length
+            ? post.media_urls
+            : post?.image_url ? [post.image_url] : [];
     }
 
     function resetMediaPreview() {
@@ -65,6 +87,7 @@
     }
 
     function mediaUrl(path) {
+        if (path.startsWith("Photos/") || /^https:\/\//i.test(path)) return path;
         return `${SUPABASE_PROJECT_URL}/storage/v1/object/public/events/${path
             .split("/")
             .map(encodeURIComponent)
@@ -107,7 +130,7 @@
 
         const path = `events/${crypto.randomUUID()}.${details.extension}`;
         const encodedPath = path.split("/").map(encodeURIComponent).join("/");
-        await supabaseFetch(`/storage/v1/object/events/${encodedPath}`, {
+        const response = await supabaseFetch(`/storage/v1/object/events/${encodedPath}`, {
             method: "POST",
             headers: sessionHeaders(session, {
                 "Content-Type": media.type,
@@ -115,16 +138,18 @@
             }),
             body: media
         });
+        if (!response.ok) throw new Error("A media file couldn't be uploaded.");
         return path;
     }
 
     async function removeMedia(path, session) {
-        if (!path) return;
+        if (!path || !path.startsWith("events/")) return;
         const encodedPath = path.split("/").map(encodeURIComponent).join("/");
-        await supabaseFetch(`/storage/v1/object/events/${encodedPath}`, {
+        const response = await supabaseFetch(`/storage/v1/object/events/${encodedPath}`, {
             method: "DELETE",
             headers: sessionHeaders(session)
         });
+        if (!response.ok) throw new Error("A media file couldn't be removed.");
     }
 
     function clearEditor() {
@@ -152,7 +177,8 @@
             ? new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" })
                 .format(new Date(`${post.activity_date}T00:00:00`))
             : "No activity date";
-        detail.textContent = `${date} · ${post.image_url ? "Media attached" : "No media"}`;
+        const mediaCount = savedMediaPaths(post).length;
+        detail.textContent = `${date} · ${mediaCount ? `${mediaCount} ${mediaCount === 1 ? "media file" : "media files"}` : "No media"}`;
         copy.append(title, detail);
 
         const actions = document.createElement("div");
@@ -183,9 +209,9 @@
             const { session } = await getAdminSession();
             const headers = sessionHeaders(session, { Accept: "application/json" });
             const [draftResponse, archiveResponse, trashResponse] = await Promise.all([
-                supabaseFetch("/rest/v1/event_drafts?select=id,description,location,activity_date,image_url,media_aspect_ratio,created_at,updated_at&order=updated_at.desc", { headers }),
-                supabaseFetch("/rest/v1/events?select=id,title,description,location,activity_date,image_url,media_aspect_ratio,archived_at,deleted_at&archived_at=not.is.null&deleted_at=is.null&order=archived_at.desc", { headers }),
-                supabaseFetch("/rest/v1/events?select=id,title,description,location,activity_date,image_url,media_aspect_ratio,archived_at,deleted_at&deleted_at=not.is.null&order=deleted_at.desc", { headers })
+                supabaseFetch("/rest/v1/event_drafts?select=id,description,location,activity_date,image_url,media_urls,media_aspect_ratio,created_at,updated_at&order=updated_at.desc", { headers }),
+                supabaseFetch("/rest/v1/events?select=id,title,description,location,activity_date,image_url,media_urls,media_aspect_ratio,archived_at,deleted_at&archived_at=not.is.null&deleted_at=is.null&order=archived_at.desc", { headers }),
+                supabaseFetch("/rest/v1/events?select=id,title,description,location,activity_date,image_url,media_urls,media_aspect_ratio,archived_at,deleted_at&deleted_at=not.is.null&order=deleted_at.desc", { headers })
             ]);
             const [drafts, archivedPosts, trashedPosts] = await Promise.all([
                 draftResponse.json(),
@@ -219,8 +245,11 @@
         photoInput.value = "";
         const selectedAspect = aspectRatioInputs.find((input) => input.value === draft.media_aspect_ratio);
         if (selectedAspect) selectedAspect.checked = true;
-        selectedFile.textContent = draft.image_url ? "Saved media attached." : "No media selected yet.";
-        showSavedMedia(draft.image_url);
+        const mediaPaths = savedMediaPaths(draft);
+        selectedFile.textContent = mediaPaths.length
+            ? `${mediaPaths.length} saved ${mediaPaths.length === 1 ? "media file" : "media files"} attached.`
+            : "No media selected yet.";
+        showSavedMedia(mediaPaths[0]);
         updatePreview();
         status.textContent = "Editing saved draft. Save your changes or publish it.";
         status.className = "form-status";
@@ -238,8 +267,11 @@
         photoInput.value = "";
         const selectedAspect = aspectRatioInputs.find((input) => input.value === event.media_aspect_ratio);
         if (selectedAspect) selectedAspect.checked = true;
-        selectedFile.textContent = event.image_url ? "Saved media attached." : "No media selected yet.";
-        showSavedMedia(event.image_url);
+        const mediaPaths = savedMediaPaths(event);
+        selectedFile.textContent = mediaPaths.length
+            ? `${mediaPaths.length} saved ${mediaPaths.length === 1 ? "media file" : "media files"} attached.`
+            : "No media selected yet.";
+        showSavedMedia(mediaPaths[0]);
         updatePreview();
         publishButton.firstChild.textContent = "Save changes ";
         saveDraftButton.hidden = true;
@@ -293,7 +325,7 @@
                 }
                 const { session } = await getAdminSession();
                 const response = await supabaseFetch(
-                    `/rest/v1/events?select=id,title,description,location,activity_date,image_url,media_aspect_ratio&id=eq.${encodeURIComponent(eventId)}`,
+                    `/rest/v1/events?select=id,title,description,location,activity_date,image_url,media_urls,media_aspect_ratio&id=eq.${encodeURIComponent(eventId)}`,
                     { headers: sessionHeaders(session, { Accept: "application/json" }) }
                 );
                 const [event] = await response.json();
@@ -316,51 +348,40 @@
     locationInput.addEventListener("input", updatePreview);
 
     photoInput.addEventListener("change", () => {
-        const [media] = photoInput.files || [];
+        const files = Array.from(photoInput.files || []);
+        const savedPaths = savedMediaPaths(editingDraft || editingEvent);
         status.textContent = "";
         status.className = "form-status";
 
         resetMediaPreview();
-        selectedFile.textContent = media
-            ? media.name
-            : (editingDraft?.image_url || editingEvent?.image_url)
-                ? "Saved media attached."
+        selectedFile.textContent = files.length
+            ? files.length > 1
+                ? `${files.length} photos selected.`
+                : files[0].name
+            : savedPaths.length
+                ? `${savedPaths.length} saved ${savedPaths.length === 1 ? "media file" : "media files"} attached.`
                 : "No media selected yet.";
 
-        if (!media) {
-            if (editingDraft?.image_url || editingEvent?.image_url) {
-                showSavedMedia(editingDraft?.image_url || editingEvent.image_url);
-            }
+        if (!files.length) {
+            if (savedPaths.length) showSavedMedia(savedPaths[0]);
             return;
         }
-        const details = mediaDetails(media);
-        if (!details) {
-            status.textContent = "Choose a JPG, PNG, WebP, GIF, MP4, MOV, or WebM file.";
+        let details;
+        try {
+            details = validateMediaFiles(files);
+        } catch (error) {
+            status.textContent = error.message;
             status.classList.add("error");
             photoInput.value = "";
-            selectedFile.textContent = (editingDraft?.image_url || editingEvent?.image_url)
-                ? "Saved media attached."
+            selectedFile.textContent = savedPaths.length
+                ? `${savedPaths.length} saved ${savedPaths.length === 1 ? "media file" : "media files"} attached.`
                 : "No media selected yet.";
-            if (editingDraft?.image_url || editingEvent?.image_url) {
-                showSavedMedia(editingDraft?.image_url || editingEvent.image_url);
-            }
-            return;
-        }
-        if (media.size === 0 || media.size > 8 * 1024 * 1024) {
-            status.textContent = "Choose a file larger than 0 bytes and no larger than 8 MB.";
-            status.classList.add("error");
-            photoInput.value = "";
-            selectedFile.textContent = (editingDraft?.image_url || editingEvent?.image_url)
-                ? "Saved media attached."
-                : "No media selected yet.";
-            if (editingDraft?.image_url || editingEvent?.image_url) {
-                showSavedMedia(editingDraft?.image_url || editingEvent.image_url);
-            }
+            if (savedPaths.length) showSavedMedia(savedPaths[0]);
             return;
         }
 
-        previewUrl = URL.createObjectURL(media);
-        if (details.kind === "video") {
+        previewUrl = URL.createObjectURL(files[0]);
+        if (details[0].kind === "video") {
             previewVideo.src = previewUrl;
             previewVideo.hidden = false;
         } else {
@@ -376,20 +397,22 @@
         saveDraftButton.disabled = true;
         status.textContent = "";
         status.className = "form-status";
-        let uploadedPath = "";
+        let uploadedPaths = [];
         let draftSaved = false;
 
         try {
             const { session } = await getAdminSession();
-            const [media] = photoInput.files || [];
-            if (media) uploadedPath = await uploadMedia(media, session);
+            const files = Array.from(photoInput.files || []);
+            validateMediaFiles(files);
+            for (const media of files) uploadedPaths.push(await uploadMedia(media, session));
 
-            const mediaPath = uploadedPath || editingDraft?.image_url || null;
+            const mediaPaths = files.length ? uploadedPaths : savedMediaPaths(editingDraft);
             const draft = {
                 description: captionInput.value.trim(),
                 location: locationInput.value.trim() || null,
                 activity_date: dateInput.value || null,
-                image_url: mediaPath,
+                image_url: mediaPaths[0] || null,
+                media_urls: mediaPaths,
                 media_aspect_ratio: selectedAspectRatio(),
                 updated_at: new Date().toISOString()
             };
@@ -410,20 +433,20 @@
                     }),
                     body: JSON.stringify(draft)
                 });
+            if (!response.ok) throw new Error("The draft could not be saved.");
             const savedDrafts = await response.json();
             if (!savedDrafts.length) throw new Error("The draft could not be saved.");
             draftSaved = true;
-            uploadedPath = "";
-            const replacedPath = savedDrafts[0].image_url !== editingDraft?.image_url
-                ? editingDraft?.image_url
-                : "";
+            uploadedPaths = [];
+            const savedPaths = new Set(mediaPaths);
+            const replacedPaths = savedMediaPaths(editingDraft).filter((path) => !savedPaths.has(path));
             clearEditor();
             await refreshPostLists();
             status.textContent = "Your draft has been saved.";
             status.classList.add("success");
-            if (replacedPath) {
+            if (replacedPaths.length) {
                 try {
-                    await removeMedia(replacedPath, session);
+                    await Promise.all(replacedPaths.map((path) => removeMedia(path, session)));
                 } catch (cleanupError) {
                     status.textContent = "Your draft is saved, but its replaced media couldn't be removed.";
                     status.classList.add("error");
@@ -434,10 +457,10 @@
             status.textContent = error.message || "Couldn't save the draft. Please try again.";
             status.classList.add("error");
             console.error("Event draft save failed:", error);
-            if (uploadedPath && !draftSaved) {
+            if (uploadedPaths.length && !draftSaved) {
                 try {
                     const { session } = await getAdminSession();
-                    await removeMedia(uploadedPath, session);
+                    await Promise.all(uploadedPaths.map((path) => removeMedia(path, session)));
                 } catch (cleanupError) {
                     console.error("Unable to remove unused draft media:", cleanupError);
                 }
@@ -480,9 +503,10 @@
                 const deletedDrafts = await deleteResponse.json();
                 if (!deletedDrafts.length) throw new Error("The draft was not found or was already deleted.");
                 await refreshPostLists();
-                if (draft.image_url) {
+                const draftMedia = savedMediaPaths(draft);
+                if (draftMedia.length) {
                     try {
-                        await removeMedia(draft.image_url, session);
+                        await Promise.all(draftMedia.map((path) => removeMedia(path, session)));
                     } catch (cleanupError) {
                         draftStatus.textContent = "Draft deleted, but its media file couldn't be removed.";
                         console.error("Unable to remove deleted draft media:", cleanupError);
@@ -591,50 +615,29 @@
         status.textContent = "";
         status.className = "form-status";
         publishButton.disabled = true;
-        let uploadedPath = "";
-        let accessToken = "";
+        let uploadedPaths = [];
 
         try {
             const { session } = await getAdminSession();
-            accessToken = session.access_token;
             const caption = captionInput.value.trim();
-            const [media] = photoInput.files || [];
-            const details = media ? mediaDetails(media) : null;
+            const files = Array.from(photoInput.files || []);
+            validateMediaFiles(files);
             if (!caption || caption.length > 5000) {
                 throw new Error("Add a caption of up to 5,000 characters.");
             }
             if (!dateInput.value) {
                 throw new Error("Choose the activity date.");
             }
-            if (!(media instanceof File) && !editingDraft?.image_url && !editingEvent?.image_url) {
+            const existingMedia = savedMediaPaths(editingDraft || editingEvent);
+            if (!files.length && !existingMedia.length) {
                 throw new Error("Choose a photo or video before publishing.");
             }
-            if (media) {
-                if (!details) {
-                    throw new Error("Choose a JPG, PNG, WebP, GIF, MP4, MOV, or WebM file.");
-                }
-                if (media.size === 0 || media.size > 8 * 1024 * 1024) {
-                    throw new Error("Choose a file larger than 0 bytes and no larger than 8 MB.");
-                }
-            }
-
-            if (media) {
-            uploadedPath = `events/${crypto.randomUUID()}.${details.extension}`;
-            const encodedPath = uploadedPath.split("/").map(encodeURIComponent).join("/");
-            await supabaseFetch(`/storage/v1/object/events/${encodedPath}`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": media.type,
-                    "x-upsert": "false"
-                },
-                body: media
-            });
-            }
-            const mediaPath = uploadedPath || editingDraft?.image_url || editingEvent?.image_url;
+            for (const media of files) uploadedPaths.push(await uploadMedia(media, session));
+            const mediaPaths = files.length ? uploadedPaths : existingMedia;
+            const mediaPath = mediaPaths[0];
 
             if (editingDraft) {
-                await supabaseFetch("/rest/v1/rpc/admin_publish_event_draft", {
+                const response = await supabaseFetch("/rest/v1/rpc/admin_publish_event_draft", {
                     method: "POST",
                     headers: sessionHeaders(session, { "Content-Type": "application/json" }),
                     body: JSON.stringify({
@@ -643,9 +646,11 @@
                         p_location: locationInput.value.trim() || null,
                         p_activity_date: dateInput.value,
                         p_image_url: mediaPath,
-                        p_media_aspect_ratio: selectedAspectRatio()
+                        p_media_aspect_ratio: selectedAspectRatio(),
+                        p_media_urls: mediaPaths
                     })
                 });
+                if (!response.ok) throw new Error("The draft couldn't be published.");
             } else if (editingEvent) {
                 const title = Array.from(caption).slice(0, 180).join("");
                 const response = await supabaseFetch(
@@ -662,46 +667,51 @@
                             location: locationInput.value.trim() || null,
                             activity_date: dateInput.value,
                             image_url: mediaPath,
+                            media_urls: mediaPaths,
                             media_aspect_ratio: selectedAspectRatio()
                         })
                     }
                 );
+                if (!response.ok) throw new Error("The post couldn't be updated.");
                 if (!(await response.json()).length) throw new Error("The post wasn't found or was moved to Trash.");
             } else {
-            const title = Array.from(caption).slice(0, 180).join("");
-            await supabaseFetch("/rest/v1/events", {
-                method: "POST",
-                headers: {
+                const title = Array.from(caption).slice(0, 180).join("");
+                const response = await supabaseFetch("/rest/v1/events", {
+                    method: "POST",
+                    headers: {
                     Authorization: `Bearer ${accessToken}`,
                     "Content-Type": "application/json",
                     Prefer: "return=representation"
                 },
-                body: JSON.stringify({
-                    title,
-                    description: caption,
-                    location: locationInput.value.trim() || null,
-                    activity_date: dateInput.value,
-                    image_url: mediaPath,
-                    media_aspect_ratio: selectedAspectRatio()
-                })
-            });
+                    body: JSON.stringify({
+                        title,
+                        description: caption,
+                        location: locationInput.value.trim() || null,
+                        activity_date: dateInput.value,
+                        image_url: mediaPath,
+                        media_urls: mediaPaths,
+                        media_aspect_ratio: selectedAspectRatio()
+                    })
+                });
+                if (!response.ok) throw new Error("The update couldn't be published.");
             }
 
-            const previousMedia = editingDraft?.image_url || editingEvent?.image_url;
-            const replacedMedia = uploadedPath && previousMedia && previousMedia !== mediaPath
-                ? previousMedia
-                : "";
+            const previousMedia = savedMediaPaths(editingDraft || editingEvent);
+            const currentMedia = new Set(mediaPaths);
+            const replacedMedia = files.length
+                ? previousMedia.filter((path) => !currentMedia.has(path))
+                : [];
             const updatedEvent = Boolean(editingEvent);
-            uploadedPath = "";
+            uploadedPaths = [];
             clearEditor();
             await refreshPostLists();
             status.textContent = updatedEvent
                 ? "The post has been updated."
                 : "Your update is live in the community feed.";
             status.classList.add("success");
-            if (replacedMedia) {
+            if (replacedMedia.length) {
                 try {
-                    await removeMedia(replacedMedia, session);
+                    await Promise.all(replacedMedia.map((path) => removeMedia(path, session)));
                 } catch (cleanupError) {
                     status.textContent = "Your update is saved, but the replaced media couldn't be removed.";
                     status.classList.add("error");
@@ -713,13 +723,10 @@
             status.classList.add("error");
             console.error("Activity publishing failed:", error);
 
-            if (uploadedPath && accessToken) {
-                const encodedPath = uploadedPath.split("/").map(encodeURIComponent).join("/");
+            if (uploadedPaths.length) {
                 try {
-                    await supabaseFetch(`/storage/v1/object/events/${encodedPath}`, {
-                        method: "DELETE",
-                        headers: { Authorization: `Bearer ${accessToken}` }
-                    });
+                    const { session } = await getAdminSession();
+                    await Promise.all(uploadedPaths.map((path) => removeMedia(path, session)));
                 } catch (cleanupError) {
                     console.error("Unable to remove the unused activity media:", cleanupError);
                 }

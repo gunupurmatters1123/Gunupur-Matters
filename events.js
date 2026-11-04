@@ -3,8 +3,13 @@
     const FEATURED_IMAGE = "Photos/prom_team.png";
     const timeline = document.getElementById("timeline");
     const pageStatus = document.getElementById("pageStatus");
+    const navbar = document.getElementById("navbar");
     const mobileMenuButton = document.getElementById("mobileMenuBtn");
     const navMenu = document.getElementById("navMenu");
+
+    window.addEventListener("scroll", () => {
+        navbar.classList.toggle("scrolled", window.scrollY > 20);
+    }, { passive: true });
 
     mobileMenuButton.addEventListener("click", () => {
         const isOpen = navMenu.classList.toggle("active");
@@ -75,22 +80,29 @@
         const nameLabel = makeElement("label", "", "Your name");
         const nameInput = document.createElement("input");
         nameInput.name = "author_name";
+        nameInput.type = "text";
         nameInput.maxLength = 80;
         nameInput.autocomplete = "name";
+        nameInput.placeholder = "Enter your name";
+        nameInput.minLength = 2;
         nameInput.required = true;
+        nameInput.setAttribute("aria-label", "Your name, required to comment");
+        nameInput.addEventListener("input", () => nameInput.setCustomValidity(""));
         nameLabel.append(nameInput);
 
         const textLabel = makeElement("label", "", "Your perspective");
         const textInput = document.createElement("textarea");
         textInput.name = "comment_text";
+        textInput.placeholder = "Add a comment...";
         textInput.maxLength = 1000;
         textInput.rows = 3;
         textInput.required = true;
+        textInput.setAttribute("aria-label", "Comment");
         textLabel.append(textInput);
 
         const status = makeElement("p", "comment-status");
         status.setAttribute("role", "status");
-        const submit = makeElement("button", "secondary-button", "Add comment");
+        const submit = makeElement("button", "secondary-button", "Post comment");
         submit.type = "submit";
         form.append(nameLabel, textLabel, submit, status);
 
@@ -100,13 +112,28 @@
             status.className = "comment-status";
             submit.disabled = true;
             try {
+                const authorName = nameInput.value.trim().replace(/\s+/g, " ");
+                if (!/^[\p{L}\p{M}][\p{L}\p{M} .'-]{1,79}$/u.test(authorName)) {
+                    nameInput.setCustomValidity("Enter a valid name using at least two letters.");
+                    nameInput.reportValidity();
+                    status.textContent = "Enter a valid name before posting your comment.";
+                    status.classList.add("error");
+                    return;
+                }
+                const commentText = textInput.value.trim();
+                if (!commentText || commentText.length > 1000) {
+                    status.textContent = "Enter a comment of up to 1,000 characters.";
+                    status.classList.add("error");
+                    textInput.focus();
+                    return;
+                }
                 const response = await supabaseFetch("/rest/v1/event_comments", {
                     method: "POST",
                     headers: { "Content-Type": "application/json", Prefer: "return=representation" },
                     body: JSON.stringify({
                         event_id: event.id,
-                        author_name: nameInput.value.trim(),
-                        comment_text: textInput.value.trim()
+                        author_name: authorName,
+                        comment_text: commentText
                     })
                 });
                 const [comment] = await response.json();
@@ -139,9 +166,9 @@
         header.append(makeElement("span", "post-avatar", "GM"));
         const author = makeElement("div", "post-author");
         author.append(makeElement("strong", "", "Gunupur Matters"));
-        author.append(makeElement("span", "", "Community update"));
+        if (event.location) author.append(makeElement("span", "post-location", event.location));
+        author.append(makeElement("span", "post-subtitle", "Community update"));
         header.append(author);
-        if (event.location) header.append(makeElement("span", "post-location", event.location));
         article.append(header);
 
         if (isAdmin) {
@@ -170,7 +197,44 @@
                     console.error("Unable to archive the event post:", error);
                 }
             });
-            adminControls.append(archiveButton);
+            const editButton = makeElement("button", "event-admin-button", "Edit post");
+            editButton.type = "button";
+            editButton.addEventListener("click", () => {
+                window.location.href = `adupload.html?edit=${encodeURIComponent(event.id)}`;
+            });
+
+            const deleteButton = makeElement("button", "event-admin-button danger", "Delete");
+            deleteButton.type = "button";
+            deleteButton.addEventListener("click", async () => {
+                if (!window.confirm("Move this post to Trash? An admin can restore it later.")) return;
+                deleteButton.disabled = true;
+                try {
+                    const { session } = await getAdminSession();
+                    const response = await supabaseFetch(
+                        `/rest/v1/events?id=eq.${encodeURIComponent(event.id)}&archived_at=is.null&deleted_at=is.null`,
+                        {
+                            method: "PATCH",
+                            headers: {
+                                Authorization: `Bearer ${session.access_token}`,
+                                "Content-Type": "application/json",
+                                Prefer: "return=representation"
+                            },
+                            body: JSON.stringify({
+                                archived_at: null,
+                                deleted_at: new Date().toISOString()
+                            })
+                        }
+                    );
+                    if (!(await response.json()).length) throw new Error("The post was not found or was already changed.");
+                    article.remove();
+                    pageStatus.textContent = "The post was moved to Trash. Restore it from the admin upload page.";
+                } catch (error) {
+                    pageStatus.textContent = error.message || "The post couldn't be moved to Trash.";
+                    deleteButton.disabled = false;
+                    console.error("Unable to move the event post to Trash:", error);
+                }
+            });
+            adminControls.append(editButton, archiveButton, deleteButton);
             article.append(adminControls);
         }
 
@@ -198,7 +262,20 @@
         const meta = makeElement("div", "event-meta");
         meta.append(makeElement("span", "", formatDate(event.activity_date) || "Community activity"));
         content.append(meta);
-        content.append(makeElement("p", "event-description", event.description));
+        const caption = makeElement("p", "event-description", event.description);
+        const captionToggle = makeElement("button", "caption-toggle", "See more");
+        captionToggle.type = "button";
+        captionToggle.hidden = true;
+        captionToggle.setAttribute("aria-expanded", "false");
+        captionToggle.addEventListener("click", () => {
+            const expanded = caption.classList.toggle("expanded");
+            captionToggle.textContent = expanded ? "See less" : "See more";
+            captionToggle.setAttribute("aria-expanded", String(expanded));
+        });
+        content.append(caption, captionToggle);
+        requestAnimationFrame(() => {
+            captionToggle.hidden = caption.scrollHeight <= caption.clientHeight + 1;
+        });
 
         const commentSection = makeElement("section", "comments");
         const commentHeading = makeElement("h3", "", "Community perspectives");

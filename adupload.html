@@ -149,12 +149,25 @@
                     <div>
                         <span class="eyebrow">Hidden from the community feed</span>
                         <h2 id="archivedPostsTitle">Archived posts</h2>
-                        <p>Restore an archived post or permanently delete it.</p>
+                        <p>Restore a post to the feed or move it to the recoverable trash.</p>
                     </div>
                     <span class="management-count" id="archiveCount">0</span>
                 </div>
                 <p class="management-status" id="archiveStatus" role="status" aria-live="polite">Loading archived posts...</p>
                 <div class="management-list" id="archiveList"></div>
+            </section>
+
+            <section class="management-panel" aria-labelledby="trashedPostsTitle">
+                <div class="management-heading">
+                    <div>
+                        <span class="eyebrow">Deleted posts</span>
+                        <h2 id="trashedPostsTitle">Trash</h2>
+                        <p>Restore deleted posts to the feed or archive them.</p>
+                    </div>
+                    <span class="management-count" id="trashCount">0</span>
+                </div>
+                <p class="management-status" id="trashStatus" role="status" aria-live="polite">Loading deleted posts...</p>
+                <div class="management-list" id="trashList"></div>
             </section>
         </section>
         </main>

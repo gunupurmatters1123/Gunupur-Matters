@@ -23,6 +23,9 @@ alter table public.events
 alter table public.events
     add column if not exists archived_at timestamptz;
 
+alter table public.events
+    add column if not exists deleted_at timestamptz;
+
 create table if not exists public.event_drafts (
     id uuid primary key default gen_random_uuid(),
     description text not null default '' check (char_length(description) <= 5000),
@@ -43,9 +46,13 @@ create index if not exists events_activity_date_created_at_idx
 create table if not exists public.event_comments (
     id uuid primary key default gen_random_uuid(),
     event_id uuid not null references public.events(id) on delete cascade,
-    author_name text not null check (char_length(btrim(author_name)) between 1 and 80),
+    author_name text not null,
     comment_text text not null check (char_length(btrim(comment_text)) between 1 and 1000),
-    created_at timestamptz not null default now()
+    created_at timestamptz not null default now(),
+    constraint event_comments_author_name_valid check (
+        char_length(btrim(author_name)) between 2 and 80
+        and author_name ~ '[[:alnum:]]'
+    )
 );
 
 create index if not exists event_comments_event_created_at_idx
@@ -59,14 +66,15 @@ revoke all on public.events from public, anon, authenticated;
 revoke all on public.event_drafts from public, anon, authenticated;
 revoke all on public.event_comments from public, anon, authenticated;
 grant select on public.events to anon, authenticated;
-grant insert, update, delete on public.events to authenticated;
+grant insert, update on public.events to authenticated;
 grant select, insert, update, delete on public.event_drafts to authenticated;
 grant select, insert on public.event_comments to anon, authenticated;
+revoke delete on public.events from public, anon, authenticated;
 
 drop policy if exists events_public_read on public.events;
 create policy events_public_read
     on public.events for select to anon, authenticated
-    using (archived_at is null);
+    using (archived_at is null and deleted_at is null);
 
 drop policy if exists events_admin_read on public.events;
 create policy events_admin_read
@@ -85,9 +93,6 @@ create policy events_admin_update
     with check (coalesce(auth.jwt()->'app_metadata'->>'role', '') = 'admin');
 
 drop policy if exists events_admin_delete on public.events;
-create policy events_admin_delete
-    on public.events for delete to authenticated
-    using (coalesce(auth.jwt()->'app_metadata'->>'role', '') = 'admin');
 
 drop policy if exists event_drafts_admin_manage on public.event_drafts;
 create policy event_drafts_admin_manage
@@ -104,6 +109,7 @@ create policy event_comments_public_read
             from public.events
             where events.id = event_comments.event_id
                 and events.archived_at is null
+                and events.deleted_at is null
         )
     );
 
@@ -111,7 +117,8 @@ drop policy if exists event_comments_public_submit on public.event_comments;
 create policy event_comments_public_submit
     on public.event_comments for insert to anon, authenticated
     with check (
-        char_length(btrim(author_name)) between 1 and 80
+        char_length(btrim(author_name)) between 2 and 80
+        and author_name ~ '[[:alnum:]]'
         and char_length(btrim(comment_text)) between 1 and 1000
     );
 
@@ -208,3 +215,5 @@ $$;
 
 revoke all on function public.admin_publish_event_draft(uuid, text, text, date, text, text) from public;
 grant execute on function public.admin_publish_event_draft(uuid, text, text, date, text, text) to authenticated;
+
+notify pgrst, 'reload schema';

@@ -24,6 +24,9 @@
     const archiveList = document.getElementById("archiveList");
     const archiveStatus = document.getElementById("archiveStatus");
     const archiveCount = document.getElementById("archiveCount");
+    const trashList = document.getElementById("trashList");
+    const trashStatus = document.getElementById("trashStatus");
+    const trashCount = document.getElementById("trashCount");
     const aspectRatios = {
         portrait: "4 / 5",
         square: "1 / 1",
@@ -31,6 +34,7 @@
     };
     let previewUrl = "";
     let editingDraft = null;
+    let editingEvent = null;
 
     function mediaDetails(file) {
         const formats = {
@@ -125,6 +129,9 @@
 
     function clearEditor() {
         editingDraft = null;
+        editingEvent = null;
+        saveDraftButton.hidden = false;
+        publishButton.firstChild.textContent = "Publish update ";
         form.reset();
         dateInput.value = localDateValue();
         selectedFile.textContent = "No media selected yet.";
@@ -139,7 +146,7 @@
         const copy = document.createElement("div");
         copy.className = "managed-post-copy";
         const title = document.createElement("strong");
-        title.textContent = post.description.trim().slice(0, 100) || "Untitled draft";
+        title.textContent = (post.title || post.description || "").trim().slice(0, 100) || "Untitled draft";
         const detail = document.createElement("small");
         const date = post.activity_date
             ? new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" })
@@ -152,7 +159,9 @@
         actions.className = "managed-post-actions";
         const actionNames = type === "draft"
             ? [["edit", "Edit"], ["publish", "Publish"], ["delete", "Delete"]]
-            : [["restore", "Restore"], ["delete", "Delete"]];
+            : type === "archive"
+                ? [["restore", "Restore"], ["delete", "Move to trash"]]
+                : [["restore", "Restore to feed"], ["archive", "Move to archive"]];
         actionNames.forEach(([action, label]) => {
             const button = document.createElement("button");
             button.className = `management-action${action === "delete" ? " danger" : ""}`;
@@ -169,32 +178,41 @@
     async function refreshPostLists() {
         draftStatus.textContent = "Loading drafts...";
         archiveStatus.textContent = "Loading archived posts...";
+        trashStatus.textContent = "Loading deleted posts...";
         try {
             const { session } = await getAdminSession();
             const headers = sessionHeaders(session, { Accept: "application/json" });
-            const [draftResponse, archiveResponse] = await Promise.all([
+            const [draftResponse, archiveResponse, trashResponse] = await Promise.all([
                 supabaseFetch("/rest/v1/event_drafts?select=id,description,location,activity_date,image_url,media_aspect_ratio,created_at,updated_at&order=updated_at.desc", { headers }),
-                supabaseFetch("/rest/v1/events?select=id,title,description,location,activity_date,image_url,media_aspect_ratio,archived_at&archived_at=not.is.null&order=archived_at.desc", { headers })
+                supabaseFetch("/rest/v1/events?select=id,title,description,location,activity_date,image_url,media_aspect_ratio,archived_at,deleted_at&archived_at=not.is.null&deleted_at=is.null&order=archived_at.desc", { headers }),
+                supabaseFetch("/rest/v1/events?select=id,title,description,location,activity_date,image_url,media_aspect_ratio,archived_at,deleted_at&deleted_at=not.is.null&order=deleted_at.desc", { headers })
             ]);
-            const [drafts, archivedPosts] = await Promise.all([
+            const [drafts, archivedPosts, trashedPosts] = await Promise.all([
                 draftResponse.json(),
-                archiveResponse.json()
+                archiveResponse.json(),
+                trashResponse.json()
             ]);
             draftCount.textContent = String(drafts.length);
             archiveCount.textContent = String(archivedPosts.length);
+            trashCount.textContent = String(trashedPosts.length);
             draftList.replaceChildren(...drafts.map((post) => makeManagedPost(post, "draft")));
             archiveList.replaceChildren(...archivedPosts.map((post) => makeManagedPost(post, "archive")));
+            trashList.replaceChildren(...trashedPosts.map((post) => makeManagedPost(post, "trash")));
             draftStatus.textContent = drafts.length ? "" : "No saved drafts yet.";
             archiveStatus.textContent = archivedPosts.length ? "" : "No archived posts.";
+            trashStatus.textContent = trashedPosts.length ? "" : "Trash is empty.";
         } catch (error) {
-            draftStatus.textContent = "Drafts couldn't be loaded.";
-            archiveStatus.textContent = "Archived posts couldn't be loaded.";
+            const message = error.message || "Event management data couldn't be loaded.";
+            draftStatus.textContent = message;
+            archiveStatus.textContent = message;
+            trashStatus.textContent = message;
             console.error("Unable to load event drafts and archived posts:", error);
         }
     }
 
     function editDraft(draft) {
         editingDraft = draft;
+        editingEvent = null;
         captionInput.value = draft.description || "";
         dateInput.value = draft.activity_date || "";
         locationInput.value = draft.location || "";
@@ -205,6 +223,27 @@
         showSavedMedia(draft.image_url);
         updatePreview();
         status.textContent = "Editing saved draft. Save your changes or publish it.";
+        status.className = "form-status";
+        publishButton.firstChild.textContent = "Publish update ";
+        saveDraftButton.hidden = false;
+        composer.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function editEvent(event) {
+        editingDraft = null;
+        editingEvent = event;
+        captionInput.value = event.description || "";
+        dateInput.value = event.activity_date || "";
+        locationInput.value = event.location || "";
+        photoInput.value = "";
+        const selectedAspect = aspectRatioInputs.find((input) => input.value === event.media_aspect_ratio);
+        if (selectedAspect) selectedAspect.checked = true;
+        selectedFile.textContent = event.image_url ? "Saved media attached." : "No media selected yet.";
+        showSavedMedia(event.image_url);
+        updatePreview();
+        publishButton.firstChild.textContent = "Save changes ";
+        saveDraftButton.hidden = true;
+        status.textContent = "Editing a published post. Save changes to update it on the community feed.";
         status.className = "form-status";
         composer.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -247,9 +286,28 @@
             dateInput.value = localDateValue();
             updatePreview();
             await refreshPostLists();
+            const eventId = new URLSearchParams(window.location.search).get("edit");
+            if (eventId) {
+                if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(eventId)) {
+                    throw new Error("The event link is invalid.");
+                }
+                const { session } = await getAdminSession();
+                const response = await supabaseFetch(
+                    `/rest/v1/events?select=id,title,description,location,activity_date,image_url,media_aspect_ratio&id=eq.${encodeURIComponent(eventId)}`,
+                    { headers: sessionHeaders(session, { Accept: "application/json" }) }
+                );
+                const [event] = await response.json();
+                if (!event) throw new Error("The event wasn't found or you can't edit it.");
+                editEvent(event);
+            }
         } catch (error) {
             console.error("Unable to verify event publishing access:", error);
-            window.location.replace("adlog.html?next=adupload.html");
+            if (!getAdminSession || !localStorage.getItem(SUPABASE_ADMIN_SESSION_KEY)) {
+                window.location.replace("adlog.html?next=adupload.html");
+                return;
+            }
+            status.textContent = error.message || "The event editor couldn't be opened.";
+            status.classList.add("error");
         }
     }
 
@@ -265,12 +323,14 @@
         resetMediaPreview();
         selectedFile.textContent = media
             ? media.name
-            : editingDraft?.image_url
+            : (editingDraft?.image_url || editingEvent?.image_url)
                 ? "Saved media attached."
                 : "No media selected yet.";
 
         if (!media) {
-            if (editingDraft?.image_url) showSavedMedia(editingDraft.image_url);
+            if (editingDraft?.image_url || editingEvent?.image_url) {
+                showSavedMedia(editingDraft?.image_url || editingEvent.image_url);
+            }
             return;
         }
         const details = mediaDetails(media);
@@ -278,20 +338,24 @@
             status.textContent = "Choose a JPG, PNG, WebP, GIF, MP4, MOV, or WebM file.";
             status.classList.add("error");
             photoInput.value = "";
-            selectedFile.textContent = editingDraft?.image_url
+            selectedFile.textContent = (editingDraft?.image_url || editingEvent?.image_url)
                 ? "Saved media attached."
                 : "No media selected yet.";
-            if (editingDraft?.image_url) showSavedMedia(editingDraft.image_url);
+            if (editingDraft?.image_url || editingEvent?.image_url) {
+                showSavedMedia(editingDraft?.image_url || editingEvent.image_url);
+            }
             return;
         }
         if (media.size === 0 || media.size > 8 * 1024 * 1024) {
             status.textContent = "Choose a file larger than 0 bytes and no larger than 8 MB.";
             status.classList.add("error");
             photoInput.value = "";
-            selectedFile.textContent = editingDraft?.image_url
+            selectedFile.textContent = (editingDraft?.image_url || editingEvent?.image_url)
                 ? "Saved media attached."
                 : "No media selected yet.";
-            if (editingDraft?.image_url) showSavedMedia(editingDraft.image_url);
+            if (editingDraft?.image_url || editingEvent?.image_url) {
+                showSavedMedia(editingDraft?.image_url || editingEvent.image_url);
+            }
             return;
         }
 
@@ -443,7 +507,7 @@
             const { session } = await getAdminSession();
             if (action === "restore") {
                 const response = await supabaseFetch(
-                    `/rest/v1/events?id=eq.${encodeURIComponent(postId)}&archived_at=not.is.null`,
+                    `/rest/v1/events?id=eq.${encodeURIComponent(postId)}&archived_at=not.is.null&deleted_at=is.null`,
                     {
                         method: "PATCH",
                         headers: sessionHeaders(session, {
@@ -459,28 +523,64 @@
                 return;
             }
             if (action === "delete") {
-                if (!window.confirm("Permanently delete this archived post and its comments? This cannot be undone.")) return;
+                if (!window.confirm("Move this post to Trash? An admin can restore it later.")) return;
                 button.disabled = true;
                 const response = await supabaseFetch(
-                    `/rest/v1/events?id=eq.${encodeURIComponent(postId)}&archived_at=not.is.null`,
+                    `/rest/v1/events?id=eq.${encodeURIComponent(postId)}&archived_at=not.is.null&deleted_at=is.null`,
                     {
-                        method: "DELETE",
-                        headers: sessionHeaders(session, { Prefer: "return=representation" })
+                        method: "PATCH",
+                        headers: sessionHeaders(session, {
+                            "Content-Type": "application/json",
+                            Prefer: "return=representation"
+                        }),
+                        body: JSON.stringify({
+                            archived_at: null,
+                            deleted_at: new Date().toISOString()
+                        })
                     }
                 );
-                const [deletedPost] = await response.json();
-                if (!deletedPost) throw new Error("The archived post was not found or was already deleted.");
+                if (!(await response.json()).length) throw new Error("The archived post wasn't found or was already changed.");
                 await refreshPostLists();
-                try {
-                    await removeMedia(deletedPost.image_url, session);
-                } catch (cleanupError) {
-                    archiveStatus.textContent = "Post deleted, but its media file couldn't be removed.";
-                    console.error("Unable to remove permanently deleted event media:", cleanupError);
-                }
+                archiveStatus.textContent = "The post has been moved to Trash and can be restored.";
             }
         } catch (error) {
             archiveStatus.textContent = error.message || "The archive action failed. Please try again.";
             console.error("Archived event action failed:", error);
+        } finally {
+            button.disabled = false;
+        }
+    });
+
+    trashList.addEventListener("click", async (clickEvent) => {
+        const button = clickEvent.target.closest("button[data-action]");
+        if (!button) return;
+        const action = button.dataset.action;
+        const postId = button.dataset.postId;
+
+        try {
+            const { session } = await getAdminSession();
+            const update = action === "restore"
+                ? { deleted_at: null, archived_at: null }
+                : { deleted_at: null, archived_at: new Date().toISOString() };
+            const response = await supabaseFetch(
+                `/rest/v1/events?id=eq.${encodeURIComponent(postId)}&deleted_at=not.is.null`,
+                {
+                    method: "PATCH",
+                    headers: sessionHeaders(session, {
+                        "Content-Type": "application/json",
+                        Prefer: "return=representation"
+                    }),
+                    body: JSON.stringify(update)
+                }
+            );
+            if (!(await response.json()).length) throw new Error("The post wasn't found in Trash or was already changed.");
+            await refreshPostLists();
+            trashStatus.textContent = action === "restore"
+                ? "The post has been restored to the community feed."
+                : "The post has been moved to Archived posts.";
+        } catch (error) {
+            trashStatus.textContent = error.message || "The trash action failed. Please try again.";
+            console.error("Deleted event action failed:", error);
         } finally {
             button.disabled = false;
         }
@@ -506,7 +606,7 @@
             if (!dateInput.value) {
                 throw new Error("Choose the activity date.");
             }
-            if (!(media instanceof File) && !editingDraft?.image_url) {
+            if (!(media instanceof File) && !editingDraft?.image_url && !editingEvent?.image_url) {
                 throw new Error("Choose a photo or video before publishing.");
             }
             if (media) {
@@ -531,7 +631,7 @@
                 body: media
             });
             }
-            const mediaPath = uploadedPath || editingDraft?.image_url;
+            const mediaPath = uploadedPath || editingDraft?.image_url || editingEvent?.image_url;
 
             if (editingDraft) {
                 await supabaseFetch("/rest/v1/rpc/admin_publish_event_draft", {
@@ -546,6 +646,27 @@
                         p_media_aspect_ratio: selectedAspectRatio()
                     })
                 });
+            } else if (editingEvent) {
+                const title = Array.from(caption).slice(0, 180).join("");
+                const response = await supabaseFetch(
+                    `/rest/v1/events?id=eq.${encodeURIComponent(editingEvent.id)}&deleted_at=is.null`,
+                    {
+                        method: "PATCH",
+                        headers: sessionHeaders(session, {
+                            "Content-Type": "application/json",
+                            Prefer: "return=representation"
+                        }),
+                        body: JSON.stringify({
+                            title,
+                            description: caption,
+                            location: locationInput.value.trim() || null,
+                            activity_date: dateInput.value,
+                            image_url: mediaPath,
+                            media_aspect_ratio: selectedAspectRatio()
+                        })
+                    }
+                );
+                if (!(await response.json()).length) throw new Error("The post wasn't found or was moved to Trash.");
             } else {
             const title = Array.from(caption).slice(0, 180).join("");
             await supabaseFetch("/rest/v1/events", {
@@ -566,20 +687,23 @@
             });
             }
 
-            const previousDraftMedia = editingDraft?.image_url;
-            const replacedDraftMedia = uploadedPath && previousDraftMedia && previousDraftMedia !== mediaPath
-                ? previousDraftMedia
+            const previousMedia = editingDraft?.image_url || editingEvent?.image_url;
+            const replacedMedia = uploadedPath && previousMedia && previousMedia !== mediaPath
+                ? previousMedia
                 : "";
+            const updatedEvent = Boolean(editingEvent);
             uploadedPath = "";
             clearEditor();
             await refreshPostLists();
-            status.textContent = "Your update is live in the community feed.";
+            status.textContent = updatedEvent
+                ? "The post has been updated."
+                : "Your update is live in the community feed.";
             status.classList.add("success");
-            if (replacedDraftMedia) {
+            if (replacedMedia) {
                 try {
-                    await removeMedia(replacedDraftMedia, session);
+                    await removeMedia(replacedMedia, session);
                 } catch (cleanupError) {
-                    status.textContent = "Your update is live, but the replaced draft media couldn't be removed.";
+                    status.textContent = "Your update is saved, but the replaced media couldn't be removed.";
                     status.classList.add("error");
                     console.error("Unable to remove replaced event draft media:", cleanupError);
                 }

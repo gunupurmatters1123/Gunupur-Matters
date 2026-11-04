@@ -152,11 +152,11 @@
                 if (!window.confirm("Archive this post? It will be hidden from the community feed.")) return;
                 archiveButton.disabled = true;
                 try {
-                    await getAdminSession();
+                    const { session } = await getAdminSession();
                     await supabaseFetch(`/rest/v1/events?id=eq.${encodeURIComponent(event.id)}`, {
                         method: "PATCH",
                         headers: {
-                            Authorization: `******
+                            Authorization: `Bearer ${session.access_token}`,
                             "Content-Type": "application/json",
                             Prefer: "return=minimal"
                         },

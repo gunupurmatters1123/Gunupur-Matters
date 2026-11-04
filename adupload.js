@@ -678,11 +678,10 @@
                 const title = Array.from(caption).slice(0, 180).join("");
                 const response = await supabaseFetch("/rest/v1/events", {
                     method: "POST",
-                    headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": "application/json",
-                    Prefer: "return=representation"
-                },
+                    headers: sessionHeaders(session, {
+                        "Content-Type": "application/json",
+                        Prefer: "return=representation"
+                    }),
                     body: JSON.stringify({
                         title,
                         description: caption,

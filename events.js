@@ -240,22 +240,39 @@
                 return;
             }
 
+            timeline.replaceChildren(...events.map((event) => makeEventCard(event, [], isAdmin)));
+
             const ids = events.map((event) => encodeURIComponent(event.id)).join(",");
-            const comments = await fetchRows(
-                "/rest/v1/event_comments",
-                `select=id,event_id,author_name,comment_text,created_at&event_id=in.(${ids})&order=created_at.asc`
-            );
+            let comments = [];
+            let commentsAvailable = true;
+            try {
+                comments = await fetchRows(
+                    "/rest/v1/event_comments",
+                    `select=id,event_id,author_name,comment_text,created_at&event_id=in.(${ids})&order=created_at.asc`
+                );
+            } catch (error) {
+                commentsAvailable = false;
+                pageStatus.textContent = "Community updates are shown, but comments couldn't load right now.";
+                console.error("Unable to load comments for the community events feed:", error);
+            }
             const commentsByEvent = new Map();
             comments.forEach((comment) => {
                 if (!commentsByEvent.has(comment.event_id)) commentsByEvent.set(comment.event_id, []);
                 commentsByEvent.get(comment.event_id).push(comment);
             });
-            timeline.replaceChildren(...events.map((event) => makeEventCard(
-                event,
-                commentsByEvent.get(event.id) || [],
-                isAdmin
-            )));
-            pageStatus.textContent = "";
+            events.forEach((event) => {
+                const card = document.getElementById(`event-${event.id}`);
+                if (!card) return;
+                const eventComments = commentsByEvent.get(event.id) || [];
+                const commentList = card.querySelector(".comment-list");
+                commentList.replaceChildren(...eventComments.map(makeComment));
+                const emptyMessage = card.querySelector(".no-comments");
+                if (eventComments.length && emptyMessage) emptyMessage.remove();
+                const count = card.querySelector(".comment-count");
+                count.textContent = String(eventComments.length);
+                count.setAttribute("aria-label", `${eventComments.length} comments`);
+            });
+            if (commentsAvailable) pageStatus.textContent = "";
         } catch (error) {
             timeline.replaceChildren();
             pageStatus.textContent = "The community updates couldn't load right now. Please try again later.";

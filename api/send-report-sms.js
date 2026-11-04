@@ -1,6 +1,14 @@
 const SUPABASE_URL =
     process.env.SUPABASE_URL || "https://alptdaggxnvilkwlnfrr.supabase.co";
 
+function smsField(value, maxLength, fallback) {
+    const normalized = String(value || "")
+        .replace(/[\u0000-\u001f\u007f]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    return Array.from(normalized).slice(0, maxLength).join("") || fallback;
+}
+
 module.exports = async function handler(req, res) {
     res.setHeader("Cache-Control", "no-store");
     if (req.method !== "POST") {
@@ -28,7 +36,7 @@ module.exports = async function handler(req, res) {
 
     try {
         const query = new URLSearchParams({
-            select: "report_number,reporter_name,reporter_phone,report_sms_sent_at,created_at",
+            select: "report_number,reporter_name,reporter_phone,report_sms_sent_at,title,category,description,location,street,ward_number",
             report_number: `eq.${reportId}`,
             limit: "1"
         });
@@ -56,11 +64,17 @@ module.exports = async function handler(req, res) {
             throw new Error("Report has no valid Indian mobile number.");
         }
 
-        const submittedAt = new Intl.DateTimeFormat("en-IN", {
-            timeZone: "Asia/Kolkata",
-            dateStyle: "medium",
-            timeStyle: "short"
-        }).format(new Date(report.created_at)) + " IST";
+        const issueSummary = smsField(
+            report.title || report.description,
+            42,
+            "Issue reported"
+        );
+        const location = smsField(
+            [report.street, report.ward_number].filter(Boolean).join(", ")
+                || report.location,
+            32,
+            "Gunupur"
+        );
         const smsResponse = await fetch("https://control.msg91.com/api/v5/flow", {
             method: "POST",
             headers: {
@@ -72,9 +86,10 @@ module.exports = async function handler(req, res) {
                 short_url: 0,
                 recipients: [{
                     mobiles: phone,
-                    VAR1: reporterName,
-                    VAR2: reportId,
-                    VAR3: submittedAt
+                    VAR1: issueSummary,
+                    VAR2: smsField(report.category, 22, "General"),
+                    VAR3: location,
+                    VAR4: reportId
                 }]
             })
         });

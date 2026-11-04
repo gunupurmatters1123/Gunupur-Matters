@@ -2,13 +2,13 @@
 
 ## SMS confirmation
 
-After a report is saved, the server sends one confirmation SMS to the submitted Indian mobile number. The message should say that the named person reported an issue on Gunupur Matters, include the report ID and the submission date/time in IST, and state that the report is Pending Review.
+After a report is saved, the server sends one confirmation SMS to the submitted Indian mobile number. Keep the approved message compact: include the issue summary, category, ward/street location, report ID, and Pending Review status. The summary is taken from the title (or description if no title is provided) and shortened; the full description and sensitive personal details are not sent.
 
 - `MSG91_AUTH_KEY`
 - `MSG91_FLOW_TEMPLATE_ID`
 - `SUPABASE_SECRET_KEY` (or the existing `SUPABASE_SERVICE_ROLE_KEY`)
 
-Configure these as server-side environment variables in Vercel and redeploy. The MSG91 Flow template must be approved and map `VAR1` to the reporter name, `VAR2` to the report ID, and `VAR3` to the submission date/time. For example: `Dear {#var#}, you reported an issue on Gunupur Matters on {#var#}. Report ID: {#var#}. Status: Pending Review. We will update you after review. - Gunupur Matters`. Ensure the text and variables match the approved MSG91/DLT template. Never put provider or Supabase secret keys in browser code.
+Configure these as server-side environment variables in Vercel and redeploy. The MSG91 Flow template must be approved and map `VAR1` to the shortened issue summary, `VAR2` to the category, `VAR3` to the ward/street location, and `VAR4` to the report ID. For example: `Gunupur Matters: {#var#} issue ({#var#}) reported at {#var#}. ID {#var#}. Status: Pending Review.` Ensure the text and variables match the approved MSG91/DLT template. Never put provider or Supabase secret keys in browser code.
 
 The report is saved even if SMS delivery fails; the submission page will say when the SMS was not sent. Check the Vercel Function logs for the reason. Confirm the MSG91 Flow template ID, recipient variable names, account balance, and applicable DLT/template approval before testing a real mobile number.
 

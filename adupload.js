@@ -192,7 +192,7 @@
             ? [["edit", "Edit"], ["publish", "Publish"], ["delete", "Delete"]]
             : type === "archive"
                 ? [["restore", "Restore"], ["delete", "Move to trash"]]
-                : [["restore", "Restore to feed"], ["archive", "Move to archive"]];
+                : [["restore", "Restore to feed"], ["archive", "Move to archive"], ["delete", "Delete permanently"]];
         actionNames.forEach(([action, label]) => {
             const button = document.createElement("button");
             button.className = `management-action${action === "delete" ? " danger" : ""}`;
@@ -588,6 +588,40 @@
 
         try {
             const { session } = await getAdminSession();
+            if (action === "delete") {
+                if (!window.confirm("Permanently delete this post and its comments? This cannot be undone.")) return;
+                button.disabled = true;
+                const postResponse = await supabaseFetch(
+                    `/rest/v1/events?select=id,image_url,media_urls&id=eq.${encodeURIComponent(postId)}&deleted_at=not.is.null`,
+                    { headers: sessionHeaders(session, { Accept: "application/json" }) }
+                );
+                const [post] = await postResponse.json();
+                if (!post) throw new Error("The post wasn't found in Trash or was already changed.");
+
+                const deleteResponse = await supabaseFetch(
+                    `/rest/v1/events?id=eq.${encodeURIComponent(postId)}&deleted_at=not.is.null`,
+                    {
+                        method: "DELETE",
+                        headers: sessionHeaders(session, { Prefer: "return=representation" })
+                    }
+                );
+                if (!(await deleteResponse.json()).length) throw new Error("The post wasn't found in Trash or was already changed.");
+                await refreshPostLists();
+
+                const mediaPaths = [...new Set(savedMediaPaths(post))];
+                if (mediaPaths.length) {
+                    try {
+                        await Promise.all(mediaPaths.map((path) => removeMedia(path, session)));
+                    } catch (cleanupError) {
+                        trashStatus.textContent = "The post was deleted, but some media files couldn't be removed.";
+                        console.error("Unable to remove permanently deleted event media:", cleanupError);
+                        return;
+                    }
+                }
+                trashStatus.textContent = "The post and its comments were permanently deleted.";
+                return;
+            }
+
             const update = action === "restore"
                 ? { deleted_at: null, archived_at: null }
                 : { deleted_at: null, archived_at: new Date().toISOString() };

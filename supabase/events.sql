@@ -121,6 +121,7 @@ grant select on public.event_comments to anon, authenticated;
 grant delete on public.event_comments to authenticated;
 grant select on public.event_comment_reports to authenticated;
 revoke delete on public.events from public, anon, authenticated;
+grant delete on public.events to authenticated;
 
 drop policy if exists events_public_read on public.events;
 create policy events_public_read
@@ -144,6 +145,12 @@ create policy events_admin_update
     with check (coalesce(auth.jwt()->'app_metadata'->>'role', '') = 'admin');
 
 drop policy if exists events_admin_delete on public.events;
+create policy events_admin_delete
+    on public.events for delete to authenticated
+    using (
+        deleted_at is not null
+        and coalesce(auth.jwt()->'app_metadata'->>'role', '') = 'admin'
+    );
 
 drop policy if exists event_drafts_admin_manage on public.event_drafts;
 create policy event_drafts_admin_manage

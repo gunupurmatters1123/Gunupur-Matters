@@ -232,7 +232,7 @@
             }
             const events = await fetchRows(
                 "/rest/v1/events",
-                "select=id,title,description,location,activity_date,image_url,media_aspect_ratio,created_at&archived_at=is.null&order=activity_date.desc,created_at.desc&limit=40"
+                "select=id,title,description,location,activity_date,image_url,media_aspect_ratio,created_at&order=activity_date.desc,created_at.desc&limit=40"
             );
             if (events.length === 0) {
                 timeline.replaceChildren();

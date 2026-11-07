@@ -74,7 +74,13 @@ declare
 begin
     select report_number
     into matched_report_number
-    from public.reports
+    from (
+        select report_number, reporter_name
+        from public.reports
+        union all
+        select report_number, reporter_name
+        from public.deleted_report_tracking
+    ) tracked
     where report_number = upper(btrim(coalesce(p_report_number, '')))
       and lower(regexp_replace(btrim(coalesce(reporter_name, '')), '\s+', ' ', 'g'))
             = lower(regexp_replace(btrim(coalesce(p_reporter_name, '')), '\s+', ' ', 'g'))

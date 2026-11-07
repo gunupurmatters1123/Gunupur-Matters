@@ -5,9 +5,13 @@ alter table public.reports add column if not exists archive_reason text;
 
 create table if not exists public.deleted_report_tracking (
     report_number text primary key,
+    reporter_name text,
     deletion_reason text not null,
     deleted_at timestamptz not null default now()
 );
+
+alter table public.deleted_report_tracking
+    add column if not exists reporter_name text;
 
 alter table public.deleted_report_tracking enable row level security;
 revoke all privileges on table public.deleted_report_tracking from public, anon, authenticated;
@@ -67,16 +71,18 @@ begin
     end if;
 
     insert into public.deleted_report_tracking (
-        report_number, deletion_reason, deleted_at
+        report_number, reporter_name, deletion_reason, deleted_at
     )
     select
         report_number,
+        reporter_name,
         coalesce(nullif(btrim(archive_reason), ''), 'No reason was recorded.'),
         now()
     from public.reports
     where report_number = p_report_number and status = 'Archived'
     on conflict (report_number) do update
-    set deletion_reason = excluded.deletion_reason,
+    set reporter_name = excluded.reporter_name,
+        deletion_reason = excluded.deletion_reason,
         deleted_at = excluded.deleted_at;
 
     delete from public.reports
@@ -145,5 +151,44 @@ $$;
 
 revoke all on function public.track_report(text) from public, anon, authenticated;
 grant execute on function public.track_report(text) to service_role;
+
+create or replace function public.track_report_by_name(
+    p_report_number text,
+    p_reporter_name text
+)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+    matched_report_number text;
+begin
+    select report_number
+    into matched_report_number
+    from (
+        select report_number, reporter_name
+        from public.reports
+        union all
+        select report_number, reporter_name
+        from public.deleted_report_tracking
+    ) tracked
+    where report_number = upper(btrim(coalesce(p_report_number, '')))
+      and lower(regexp_replace(btrim(coalesce(reporter_name, '')), '\s+', ' ', 'g'))
+            = lower(regexp_replace(btrim(coalesce(p_reporter_name, '')), '\s+', ' ', 'g'))
+    limit 1;
+
+    if matched_report_number is null then
+        return null;
+    end if;
+
+    return public.track_report(matched_report_number);
+end;
+$$;
+
+revoke all on function public.track_report_by_name(text, text)
+    from public, anon, authenticated, service_role;
+grant execute on function public.track_report_by_name(text, text) to anon, authenticated;
 
 notify pgrst, 'reload schema';

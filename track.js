@@ -24,7 +24,7 @@ function normalizeStatus(status) {
     const normalized = value.toLowerCase().replace(/\s+/g, " ");
     const statuses = {
         "pending review": "Pending Review",
-        "submitted": "Submitted",
+        "submitted": "Report Submitted",
         "report submitted": "Report Submitted",
         "under review": "Under Review",
         "follow-up initiated": "Follow-up Initiated",

@@ -7,6 +7,7 @@
     const mobileMenuButton = document.getElementById("mobileMenuBtn");
     const navMenu = document.getElementById("navMenu");
     const eventCommentStates = new WeakMap();
+    const EVENTS_PAGE_SIZE = 100;
 
     window.addEventListener("scroll", () => {
         navbar.classList.toggle("scrolled", window.scrollY > 20);
@@ -39,6 +40,18 @@
         });
         if (!response.ok) throw new Error(`Request failed (HTTP ${response.status}).`);
         return response.json();
+    }
+
+    async function fetchAllRows(resource, query) {
+        const rows = [];
+        for (let offset = 0; ; offset += EVENTS_PAGE_SIZE) {
+            const page = await fetchRows(
+                resource,
+                `${query}&limit=${EVENTS_PAGE_SIZE}&offset=${offset}`
+            );
+            rows.push(...page);
+            if (page.length < EVENTS_PAGE_SIZE) return rows;
+        }
     }
 
     function makeElement(tag, className, text) {
@@ -533,15 +546,15 @@
             }
             let events;
             try {
-                events = await fetchRows(
+                events = await fetchAllRows(
                     "/rest/v1/events",
-                    "select=id,title,description,location,activity_date,image_url,media_urls,media_aspect_ratio,created_at&order=activity_date.desc,created_at.desc&limit=40"
+                    "select=id,title,description,location,activity_date,image_url,media_urls,media_aspect_ratio,created_at&order=created_at.desc,activity_date.desc,id.desc"
                 );
             } catch (error) {
                 if (!error.message.includes("media_urls") || !error.message.includes("does not exist")) throw error;
-                events = await fetchRows(
+                events = await fetchAllRows(
                     "/rest/v1/events",
-                    "select=id,title,description,location,activity_date,image_url,media_aspect_ratio,created_at&order=activity_date.desc,created_at.desc&limit=40"
+                    "select=id,title,description,location,activity_date,image_url,media_aspect_ratio,created_at&order=created_at.desc,activity_date.desc,id.desc"
                 );
             }
             if (events.length === 0) {
@@ -552,14 +565,17 @@
 
             timeline.replaceChildren(...events.map((event) => makeEventCard(event, [], isAdmin)));
 
-            const ids = events.map((event) => encodeURIComponent(event.id)).join(",");
             let comments = [];
             let commentsAvailable = true;
             try {
-                comments = await fetchRows(
-                    "/rest/v1/event_comments",
-                    `select=id,event_id,author_name,comment_text,created_at&event_id=in.(${ids})&order=created_at.desc&limit=1000`
-                );
+                for (let index = 0; index < events.length; index += EVENTS_PAGE_SIZE) {
+                    const eventIds = events.slice(index, index + EVENTS_PAGE_SIZE)
+                        .map((event) => encodeURIComponent(event.id)).join(",");
+                    comments.push(...await fetchAllRows(
+                        "/rest/v1/event_comments",
+                        `select=id,event_id,author_name,comment_text,created_at&event_id=in.(${eventIds})&order=created_at.desc`
+                    ));
+                }
             } catch (error) {
                 commentsAvailable = false;
                 pageStatus.textContent = "Community updates are shown, but comments couldn't load right now.";

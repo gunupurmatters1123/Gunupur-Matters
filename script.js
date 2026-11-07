@@ -72,8 +72,6 @@ const photo =
 const photoPreview =
     document.getElementById("photoPreview");
 
-let selectedPhotoData = "";
-
 /* =========================================================
    NAVIGATION
    ========================================================= */
@@ -247,81 +245,65 @@ description.addEventListener("input", () => {
 
 photo.addEventListener("change", () => {
 
-    const file = photo.files[0];
+    const files = Array.from(photo.files || []);
 
     photoPreview.innerHTML = "";
 
-    if (!file) {
+    if (!files.length) {
 
-        selectedPhotoData = "";
         photoPreview.classList.remove("active");
 
         return;
 
     }
-
 
     const maxSize =
         5 * 1024 * 1024;
 
+    if (files.length > 4) {
+        showToast(
+            "Too Many Photos",
+            "Please select no more than 4 photos.",
+            "error"
+        );
+        photo.value = "";
+        photoPreview.classList.remove("active");
+        return;
+    }
 
-    if (file.size > maxSize) {
-
+    if (files.some(file => file.size > maxSize)) {
         showToast(
             "File Too Large",
-            "Please select an image smaller than 5MB.",
+            "Each photo must be no larger than 5 MB.",
             "error"
         );
-
         photo.value = "";
-
         photoPreview.classList.remove("active");
-
         return;
-
     }
 
-
-    if (!file.type.startsWith("image/")) {
-
+    if (files.some(file => !file.type.startsWith("image/"))) {
         showToast(
             "Invalid File",
-            "Please select a JPG, PNG or WEBP image.",
+            "Please select JPG, PNG, or WEBP photos.",
             "error"
         );
-
         photo.value = "";
-
+        photoPreview.classList.remove("active");
         return;
-
     }
 
-
-    const reader =
-        new FileReader();
-
-
-    reader.onload = function(event) {
-
-        selectedPhotoData = event.target.result;
-
-        const image =
-            document.createElement("img");
-
-        image.src =
-            selectedPhotoData;
-
-        image.alt =
-            "Selected report photograph";
-
+    files.forEach(file => {
+        const imageUrl = URL.createObjectURL(file);
+        const image = document.createElement("img");
+        image.src = imageUrl;
+        image.alt = "Selected report photograph";
+        image.addEventListener("load", () => URL.revokeObjectURL(imageUrl), { once: true });
+        image.addEventListener("error", () => URL.revokeObjectURL(imageUrl), { once: true });
         photoPreview.appendChild(image);
+    });
 
-        photoPreview.classList.add("active");
-
-    };
-
-
-    reader.readAsDataURL(file);
+    photoPreview.classList.add("active");
 
 });
 
@@ -397,7 +379,7 @@ reportForm.addEventListener("submit", async event => {
             reporter_name: name,
             reporter_phone: contact,
             reporter_email: ""
-        }, photo.files[0] || null);
+        }, Array.from(photo.files || []));
 
         lastSubmittedReporterName = name;
         const smsSent = await sendReportConfirmationSms(result.report_id, name);
@@ -410,7 +392,6 @@ reportForm.addEventListener("submit", async event => {
         charCount.textContent = "0";
         photoPreview.innerHTML = "";
         photoPreview.classList.remove("active");
-        selectedPhotoData = "";
         await updateStatistics();
 
         showToast(

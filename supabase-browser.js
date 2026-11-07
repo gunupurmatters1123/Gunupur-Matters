@@ -33,10 +33,24 @@ async function supabaseFetch(path, options) {
 }
 
 async function submitReportToSupabase(report, file = null) {
-    let filePath = null;
-    let mediaType = null;
-    let fileName = null;
-    let mediaContentType = null;
+    const files = file == null ? [] : Array.isArray(file) ? file : [file];
+    const maximumFileSize = 30 * 1024 * 1024;
+    const typesByExtension = {
+        jpg: ["image", "image/jpeg"],
+        jpeg: ["image", "image/jpeg"],
+        png: ["image", "image/png"],
+        webp: ["image", "image/webp"],
+        gif: ["image", "image/gif"],
+        heic: ["image", "image/heic"],
+        heif: ["image", "image/heif"],
+        mp4: ["video", "video/mp4"],
+        mov: ["video", "video/quicktime"],
+        webm: ["video", "video/webm"],
+        avi: ["video", "video/x-msvideo"],
+        mkv: ["video", "video/x-matroska"],
+        mpeg: ["video", "video/mpeg"],
+        mpg: ["video", "video/mpeg"]
+    };
 
     const reporterName = String(report.reporter_name || "").trim();
     const phoneDigits = String(report.reporter_phone || "").replace(/\D/g, "");
@@ -53,31 +67,18 @@ async function submitReportToSupabase(report, file = null) {
         throw new Error("Enter a valid Indian mobile number so you can verify and track this report by SMS.");
     }
 
-    if (file) {
-        if (file.size > 30 * 1024 * 1024) {
-            throw new Error("File is too large. Maximum size is 30 MB.");
-        }
+    if (files.length > 4) {
+        throw new Error("Please select no more than 4 photos or videos.");
+    }
 
-        const typesByExtension = {
-            jpg: ["image", "image/jpeg"],
-            jpeg: ["image", "image/jpeg"],
-            png: ["image", "image/png"],
-            webp: ["image", "image/webp"],
-            gif: ["image", "image/gif"],
-            heic: ["image", "image/heic"],
-            heif: ["image", "image/heif"],
-            mp4: ["video", "video/mp4"],
-            mov: ["video", "video/quicktime"],
-            webm: ["video", "video/webm"],
-            avi: ["video", "video/x-msvideo"],
-            mkv: ["video", "video/x-matroska"],
-            mpeg: ["video", "video/mpeg"],
-            mpg: ["video", "video/mpeg"]
-        };
+    const validatedFiles = files.map(file => {
         const extension = file.name.split(".").pop().toLowerCase();
         const detectedType = typesByExtension[extension];
         if (file.size === 0) {
             throw new Error("The selected file is empty.");
+        }
+        if (file.size > maximumFileSize) {
+            throw new Error("Each photo or video must be no larger than 30 MB.");
         }
         if (!detectedType || (
             file.type
@@ -86,10 +87,13 @@ async function submitReportToSupabase(report, file = null) {
         )) {
             throw new Error("This file type is not allowed.");
         }
+        return { file, detectedType };
+    });
 
-        mediaType = detectedType[0];
-        mediaContentType = detectedType[1];
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const uploadedAttachments = [];
+    for (const { file: currentFile, detectedType } of validatedFiles) {
+        const mediaContentType = detectedType[1];
+        const safeName = currentFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
         const objectPath = `reports/${crypto.randomUUID()}-${safeName}`;
         await supabaseFetch(
             `/storage/v1/object/report-media/${objectPath.split("/").map(encodeURIComponent).join("/")}`,
@@ -99,13 +103,19 @@ async function submitReportToSupabase(report, file = null) {
                     "Content-Type": mediaContentType,
                     "x-upsert": "false"
                 },
-                body: file
+                body: currentFile
             }
         );
-        filePath = `${SUPABASE_PROJECT_URL}/storage/v1/object/public/report-media/${objectPath}`;
-        fileName = file.name;
+        uploadedAttachments.push({
+            file_name: currentFile.name,
+            file_path: `${SUPABASE_PROJECT_URL}/storage/v1/object/public/report-media/${objectPath}`,
+            media_type: detectedType[0],
+            content_type: mediaContentType,
+            file_size: currentFile.size
+        });
     }
 
+    const firstAttachment = uploadedAttachments[0] || {};
     const response = await supabaseFetch("/rest/v1/rpc/submit_report", {
         method: "POST",
         headers: {
@@ -130,11 +140,12 @@ async function submitReportToSupabase(report, file = null) {
                 reporter_phone: `+91${indianMobile}`,
                 reporter_email: report.reporter_email || null,
                 require_address: report.require_address === true,
-                file_name: fileName,
-                file_path: filePath,
-                media_type: mediaType,
-                file_content_type: mediaContentType,
-                file_size: file ? file.size : null
+                file_name: firstAttachment.file_name || null,
+                file_path: firstAttachment.file_path || null,
+                media_type: firstAttachment.media_type || null,
+                file_content_type: firstAttachment.content_type || null,
+                file_size: firstAttachment.file_size || null,
+                attachments: uploadedAttachments
             }
         })
     });

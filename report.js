@@ -108,55 +108,69 @@ const photoInput = document.getElementById("photo");
 
 const photoPreview = document.getElementById("photoPreview");
 
-let selectedPhotoData = "";
+let photoPreviewUrls = [];
+
+function clearPhotoPreview() {
+    photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    photoPreviewUrls = [];
+    photoPreview.replaceChildren();
+    photoPreview.classList.remove("active");
+}
 
 if (photoInput && photoPreview) {
 
     photoInput.addEventListener("change", () => {
 
-        const [file] = photoInput.files;
+        const files = Array.from(photoInput.files || []);
 
-        if (!file) {
-
-            selectedPhotoData = "";
-            photoPreview.classList.remove("active");
-            photoPreview.innerHTML = "";
-
+        clearPhotoPreview();
+        if (files.length === 0) {
             return;
-
         }
 
-        const isImage = file.type.startsWith("image/");
-        const isVideo = file.type.startsWith("video/");
-
-        if (!isImage && !isVideo) {
-
-            showToast("Invalid file", "Please choose a JPG, PNG, WEBP, MP4, MOV, or WEBM file.");
+        if (files.length > 4) {
+            showToast("Too many files", "Please select no more than 4 photos or videos.");
             photoInput.value = "";
             return;
-
         }
 
-        if (isImage) {
-            const reader = new FileReader();
-
-            reader.onload = (event) => {
-                selectedPhotoData = event.target.result;
-                photoPreview.innerHTML = `<img src="${selectedPhotoData}" alt="Issue preview" />`;
-                photoPreview.classList.add("active");
-            };
-
-            reader.readAsDataURL(file);
-            return;
+        for (const file of files) {
+            const extension = file.name.split(".").pop().toLowerCase();
+            const isImage = file.type.startsWith("image/")
+                || ["jpg", "jpeg", "png", "webp", "gif", "heic", "heif"].includes(extension);
+            const isVideo = file.type.startsWith("video/")
+                || ["mp4", "mov", "avi", "mkv", "webm", "mpeg", "mpg"].includes(extension);
+            if (!isImage && !isVideo) {
+                showToast("Invalid file", "Please choose supported photos or videos.");
+                photoInput.value = "";
+                clearPhotoPreview();
+                return;
+            }
+            if (file.size > 30 * 1024 * 1024) {
+                showToast("File too large", "Each photo or video must be no larger than 30 MB.");
+                photoInput.value = "";
+                clearPhotoPreview();
+                return;
+            }
         }
 
-        selectedPhotoData = "";
-        const videoUrl = URL.createObjectURL(file);
-        photoPreview.innerHTML = `
-            <video controls playsinline preload="metadata">
-                <source src="${videoUrl}" type="${file.type}">
-            </video>
-        `;
+        files.forEach(file => {
+            const url = URL.createObjectURL(file);
+            photoPreviewUrls.push(url);
+            const extension = file.name.split(".").pop().toLowerCase();
+            const isVideo = file.type.startsWith("video/")
+                || ["mp4", "mov", "avi", "mkv", "webm", "mpeg", "mpg"].includes(extension);
+            const media = document.createElement(isVideo ? "video" : "img");
+            media.src = url;
+            if (media instanceof HTMLVideoElement) {
+                media.controls = true;
+                media.playsInline = true;
+                media.preload = "metadata";
+            } else {
+                media.alt = file.name;
+            }
+            photoPreview.appendChild(media);
+        });
         photoPreview.classList.add("active");
 
     });
@@ -392,10 +406,7 @@ if (reportForm) {
         }
 
         const formData = new FormData(reportForm);
-
-        if (photoInput && photoInput.files && photoInput.files[0]) {
-            formData.set("photo", photoInput.files[0]);
-        }
+        const photos = Array.from(photoInput && photoInput.files ? photoInput.files : []);
 
         try {
             const value = name => String(formData.get(name) || "").trim();
@@ -417,7 +428,7 @@ if (reportForm) {
                 reporter_name: value("reporterName"),
                 reporter_phone: contact,
                 reporter_email: value("reporterEmail") || (contact.includes("@") ? contact : "")
-            }, photoInput && photoInput.files ? photoInput.files[0] : null);
+            }, photos);
 
             lastReporterName = value("reporterName");
             const smsSent = await sendReportConfirmationSms(result.report_id, lastReporterName);
@@ -430,11 +441,8 @@ if (reportForm) {
             }
 
             if (photoPreview) {
-                photoPreview.classList.remove("active");
-                photoPreview.innerHTML = "";
+                clearPhotoPreview();
             }
-
-            selectedPhotoData = "";
 
             if (locationStatus) {
                 locationStatus.textContent = "Location not selected";

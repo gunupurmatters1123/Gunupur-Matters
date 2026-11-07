@@ -1734,18 +1734,24 @@ a {
 
 .photo-preview.active {
 
-    display: block;
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(120px, 1fr));
+
+    gap: 10px;
 
 }
 
 
-.photo-preview img {
+.photo-preview img,
+.photo-preview video {
 
     display: block;
 
     width: 100%;
 
-    max-height: 250px;
+    height: 150px;
 
     object-fit: cover;
 
